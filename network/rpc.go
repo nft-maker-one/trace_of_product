@@ -13,11 +13,12 @@ type MessageType byte
 
 const (
 	MessageTypeTransForm MessageType = 0x1
-	MessageTypeProcess   MessageType = 0x2
-	MessageTypeStorage   MessageType = 0x3
-	MessageTypeSell      MessageType = 0x4
-	MessageTypeTx        MessageType = 0x5
-	MessageTypeBlock     MessageType = 0x6
+	MessageTypeTransport MessageType = 0x2
+	MessageTypeProcess   MessageType = 0x3
+	MessageTypeStorage   MessageType = 0x4
+	MessageTypeSell      MessageType = 0x5
+	MessageTypeTx        MessageType = 0x6
+	MessageTypeBlock     MessageType = 0x7
 )
 
 type RPC struct {

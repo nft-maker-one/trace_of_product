@@ -8,6 +8,8 @@ import (
 	"encoding/gob"
 	"fmt"
 	"time"
+
+	"github.com/sirupsen/logrus"
 )
 
 type Header struct {
@@ -82,6 +84,8 @@ func (b *Block) HeaderData() []byte {
 	buf := &bytes.Buffer{}
 	enc := gob.NewEncoder(buf)
 	enc.Encode(b.Header)
+	logrus.WithField("headerData", buf.Bytes()).Debugln()
+	fmt.Println(buf.Bytes())
 	return buf.Bytes()
 }
 

@@ -8,6 +8,7 @@ import (
 	"fmt"
 )
 
+// MetaData represents for the sotrage message and identical message of Eggplants
 type MetaData struct {
 	EggplantId      int
 	ProductHeight   int
@@ -22,12 +23,13 @@ type MetaData struct {
 	SellHash        types.Hash
 }
 
+// Eggplant is maingly consist of 5 part
 type Eggplant struct {
 	MetaData
-	PublickKey crypto.PublicKey
-	Signature  *crypto.Signature
-	hash       types.Hash
-	firstSeen  int64
+	PublickKey crypto.PublicKey  //the Validator of this Eggplant
+	Signature  *crypto.Signature //the Signature of the Validator
+	hash       types.Hash        //the digest for eggplant's metadata
+	firstSeen  int64             //the creation time of the eggplant
 }
 
 func NewEggplant(data []byte) *Eggplant {

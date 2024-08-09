@@ -71,7 +71,7 @@ func NewGobEggplantDecoder(r io.Reader) *GobEggplantDecoder {
 
 func (g *GobEggplantDecoder) Decode(egg *Eggplant) error {
 	tempEgg := EggplantTemp{}
-	if err := gob.NewDecoder(g.r).Decode(tempEgg); err != nil {
+	if err := gob.NewDecoder(g.r).Decode(&tempEgg); err != nil {
 		return err
 	}
 	if egg.PublickKey.Key == nil {
@@ -87,6 +87,7 @@ func (g *GobEggplantDecoder) Decode(egg *Eggplant) error {
 	egg.PublickKey.Key.Curve = elliptic.P256()
 	egg.Signature.R = tempEgg.Sig_r
 	egg.Signature.S = tempEgg.Sig_s
+	egg.hash = tempEgg.Hash
 	return nil
 
 }
