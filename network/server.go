@@ -6,10 +6,8 @@ import (
 	"agricultural_meta/types"
 	"bytes"
 	"fmt"
-	"os"
 	"time"
 
-	"github.com/go-kit/log"
 	"github.com/sirupsen/logrus"
 )
 
@@ -30,7 +28,6 @@ type ServerOpts struct {
 	ID            string
 	Cred          map[*Server]float64
 	Type          NodeType
-	Logger        log.Logger
 	RPCDecodeFunc RPCDecodeFunc
 	RPCProcessor  RPCProcessor
 	Transports    []Transport
@@ -58,12 +55,8 @@ func NewServer(opts ServerOpts) (*Server, error) {
 	if opts.RPCDecodeFunc == nil {
 		opts.RPCDecodeFunc = DefaultRPCDecodeFunc
 	}
-	if opts.Logger == nil {
-		opts.Logger = log.NewLogfmtLogger(os.Stderr)
-		opts.Logger = log.With(opts.Logger, "ID", opts.ID)
-	}
 
-	chain, err := core.NewBlockchain(opts.Logger, geensisBlock())
+	chain, err := core.NewBlockchain(geensisBlock())
 
 	if err != nil {
 		return nil, err
@@ -113,17 +106,24 @@ free:
 			fmt.Println(string(rpc.From) + " =======> " + s.ID)
 			msg, err := s.RPCDecodeFunc(rpc)
 			if err != nil {
-				s.Logger.Log("error", err)
+				logrus.WithFields(
+					logrus.Fields{"decodeError": err.Error()},
+				).Errorln()
 			}
 			if err := s.RPCProcessor.ProcessMessage(msg); err != nil {
-				s.Logger.Log("error", err)
+				logrus.WithFields(
+					logrus.Fields{"processMessageError": err.Error()},
+				).Errorln()
 			}
 
 		case <-s.quitCh:
 			break free
 		}
 	}
-	s.Logger.Log("msg", "Server is shutting down")
+	logrus.WithFields(
+		logrus.Fields{"msg": "exiting server"},
+	).Println()
+
 }
 
 func (s *Server) initTransports() {
@@ -139,19 +139,18 @@ func (s *Server) initTransports() {
 }
 
 func (s *Server) ProcessNewEggplant(egg *core.Eggplant) error {
-
 	hash := egg.Hash(core.EggplantHasher{})
+	// check whether this eggplants is already in its memory pool
 	if s.memPool.Has(hash) {
 		return nil
 	}
-	egg.SetHash(hash)
+	// verify the signature of eggplants
 	if err := egg.Verify(); err != nil {
 		return err
 	}
-	egg.SetFirsstSeen(time.Now().UnixNano())
-
-	// s.Logger.Log("msg", "adding new tx to mempool", "hash", hash, "mempoolLength", s.memPool.Len())
-	go s.broadcastTx(egg)
+	// broadcast the message of eggplants continually
+	go s.broadcastEgg(egg)
+	// add the eggplants to its memory pool
 	return s.memPool.Add(egg)
 }
 
@@ -168,11 +167,6 @@ func (s *Server) ProcessMessage(msg *DecodeMessage) error {
 
 func (s *Server) ProcessBlock(b *core.Block) error {
 	err := s.chain.AddBlock(b)
-	// if err != nil {
-	// 	validator := s.FindNodeByValidator(b.Validator)
-	// 	s.updateCred(validator, s.IsSupervisor(b), X, Y)
-
-	// }
 	return err
 }
 
@@ -186,7 +180,7 @@ func (s *Server) broadcast(payload []byte) error {
 	return nil
 }
 
-func (s *Server) broadcastTx(tx *core.Eggplant) error {
+func (s *Server) broadcastEgg(tx *core.Eggplant) error {
 	buf := &bytes.Buffer{}
 	if err := tx.Encode(core.NewGobEggplantEncoder(buf)); err != nil {
 		return err
@@ -207,12 +201,12 @@ func geensisBlock() *core.Block {
 }
 
 func (s *Server) createNewBlock() error {
-	currentHeader, err := s.chain.GetHeader(s.chain.Height())
+	currentBlock, err := s.chain.GetBlock(s.chain.Height())
 	if err != nil {
 		return err
 	}
 	txx := s.memPool.Transactions()
-	block, err := core.NewBlockFromPrevHeader(currentHeader, txx)
+	block, err := core.NewBlockFromPrevHeader(currentBlock.Header, txx)
 	if err != nil {
 		return err
 	}

@@ -8,8 +8,6 @@ import (
 	"encoding/gob"
 	"fmt"
 	"time"
-
-	"github.com/sirupsen/logrus"
 )
 
 type Header struct {
@@ -34,6 +32,7 @@ func NewBlock(h *Header, eggs []*Eggplant) (*Block, error) {
 }
 
 func (b *Block) Sign(priKey crypto.PrivateKey) error {
+	// use ecdsa to sign the headerData
 	sig, err := priKey.Sign(b.HeaderData())
 	if err != nil {
 		return err
@@ -45,11 +44,11 @@ func (b *Block) Sign(priKey crypto.PrivateKey) error {
 
 func (b *Block) Verify() error {
 	if b.Signature == nil {
-		return fmt.Errorf("block has no signature")
+		return fmt.Errorf("block has no validator")
 	}
 
 	if !b.Signature.Verify(b.Validator, b.HeaderData()) {
-		return fmt.Errorf("block has invalid signature")
+		return fmt.Errorf("block has invalid validator")
 	}
 	dataHash, err := CalculateDataHash(b.Eggplants)
 	if err != nil {
@@ -61,7 +60,7 @@ func (b *Block) Verify() error {
 	return nil
 }
 
-func (b *Block) AddTransaction(egg *Eggplant) {
+func (b *Block) AddEggplant(egg *Eggplant) {
 	b.Eggplants = append(b.Eggplants, egg)
 }
 
@@ -80,12 +79,11 @@ func (b *Block) Hash(hasher Hasher[*Header]) types.Hash {
 	return b.hash
 }
 
+// use gobEncoder to encode Header Data
 func (b *Block) HeaderData() []byte {
 	buf := &bytes.Buffer{}
 	enc := gob.NewEncoder(buf)
 	enc.Encode(b.Header)
-	logrus.WithField("headerData", buf.Bytes()).Debugln()
-	fmt.Println(buf.Bytes())
 	return buf.Bytes()
 }
 

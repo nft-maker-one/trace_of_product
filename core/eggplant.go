@@ -50,9 +50,11 @@ func (eg *Eggplant) SetHash(hash types.Hash) {
 
 func (eg *Eggplant) EncodeMetaData() ([]byte, error) {
 	buf := &bytes.Buffer{}
+	// check whether the id of eggplant is valid
 	if eg.EggplantId < 0 {
 		return nil, fmt.Errorf("no valid MetaData")
 	}
+	// use the gobEncoder to encode MetaData of eggplant
 	if err := gob.NewEncoder(buf).Encode(eg.MetaData); err != nil {
 		return nil, err
 	}
@@ -60,34 +62,41 @@ func (eg *Eggplant) EncodeMetaData() ([]byte, error) {
 }
 
 func (eg *Eggplant) Sign(priKey crypto.PrivateKey) error {
+	// encode the MetaData
 	data, err := eg.EncodeMetaData()
 	if err != nil {
 		return err
 	}
+	// use ECDSA to sign the MetaData
 	sig, err := priKey.Sign(data)
 	if err != nil {
 		return err
 	}
+	// set the Validator for the MetaData
 	eg.PublickKey = priKey.PublicKey()
+	// record the signature
 	eg.Signature = sig
 	return nil
 }
 
 func (eg *Eggplant) Verify() error {
+	// encode the MetaData
 	data, err := eg.EncodeMetaData()
 	if err != nil {
 		return err
 	}
+
 	if eg.Signature == nil {
-		return fmt.Errorf("Invalid Signature")
+		return fmt.Errorf("Eggplant without signature")
 	}
 	if !eg.Signature.Verify(eg.PublickKey, data) {
-		return fmt.Errorf("Invalid Signature")
+		return fmt.Errorf("Eggplant with wrong validator")
 	}
 	return nil
 }
 
 func (eg *Eggplant) Hash(hasher Hasher[*Eggplant]) types.Hash {
+	//whether the hash existS
 	if eg.hash.IsZero() {
 		eg.hash = hasher.Hash(eg)
 	}

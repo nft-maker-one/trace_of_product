@@ -4,21 +4,20 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/go-kit/log"
+	"github.com/sirupsen/logrus"
 )
 
 type Blockchain struct {
-	logger    log.Logger
 	store     Storage
 	lock      sync.RWMutex
-	Headers   ([]*Header)
+	Chains    []*Block
 	validator Validator
 }
 
 func (bc *Blockchain) Height() int {
 	bc.lock.RLock()
 	defer bc.lock.RUnlock()
-	return len(bc.Headers) - 1
+	return len(bc.Chains) - 1
 }
 
 func (bc *Blockchain) AddBlock(b *Block) error {
@@ -29,20 +28,19 @@ func (bc *Blockchain) AddBlock(b *Block) error {
 	return bc.addBlockWithoutValidation(b)
 }
 
-func (bc *Blockchain) GetHeader(height int) (*Header, error) {
+func (bc *Blockchain) GetBlock(height int) (*Block, error) {
 	if height > bc.Height() {
 		return nil, fmt.Errorf("there is not block with height %d", height)
 	}
 	bc.lock.Lock()
 	defer bc.lock.Unlock()
-	return bc.Headers[height], nil
+	return bc.Chains[height], nil
 }
 
-func NewBlockchain(l log.Logger, genesis *Block) (*Blockchain, error) {
+func NewBlockchain(genesis *Block) (*Blockchain, error) {
 	bc := &Blockchain{
-		Headers: []*Header{},
-		store:   &MemoryStore{},
-		logger:  l,
+		Chains: []*Block{},
+		store:  &MemoryStore{},
 	}
 	bc.validator = NewBlockValidator(bc)
 	err := bc.addBlockWithoutValidation(genesis)
@@ -60,24 +58,16 @@ func (bc *Blockchain) HasBlock(height int) bool {
 func (bc *Blockchain) addBlockWithoutValidation(b *Block) error {
 	bc.lock.Lock()
 	defer bc.lock.Unlock()
-	if bc.Headers == nil {
-		bc.Headers = make([]*Header, 0)
+	if bc.Chains == nil {
+		bc.Chains = make([]*Block, 0)
 	}
-	// fmt.Println()
-	// fmt.Println("===================")
-	// bc.logger.Log("msg", "showing block")
-	// fmt.Printf("%+v\n", b)
-	// hash := b.Hash(BlockHasher{})
-	// fmt.Println(hash)
-	// fmt.Println("===================")
-	// fmt.Println()
+	logrus.WithFields(
+		logrus.Fields{
+			"msg":  "create block",
+			"hash": b.hash,
+		},
+	).Println()
+	bc.Chains = append(bc.Chains, b)
 
-	bc.Headers = append(bc.Headers, b.Header)
-	bc.logger.Log(
-		"msg", "add New Block",
-		"hash", b.Hash(BlockHasher{}),
-		"height", b.Height,
-		"transactions", len(b.Eggplants),
-	)
-	return bc.store.Put(b)
+	return nil
 }

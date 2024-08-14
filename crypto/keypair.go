@@ -7,8 +7,6 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"math/big"
-
-	"github.com/sirupsen/logrus"
 )
 
 type PrivateKey struct {
@@ -58,10 +56,6 @@ type Signature struct {
 }
 
 func (sig *Signature) Verify(pubKey PublicKey, data []byte) bool {
-	logrus.WithField("pubKey", pubKey).Println()
-	logrus.WithField("sig_r", sig.R).Println()
-	logrus.WithField("sig_s", sig.S).Println()
-	logrus.WithField("data", data).Println()
 	res := ecdsa.Verify(pubKey.Key, data, sig.R, sig.S)
 	return res
 }

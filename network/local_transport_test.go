@@ -42,7 +42,7 @@ func TestBroadcast(t *testing.T) {
 	tra.Connect(trb)
 	tra.Connect(trc)
 
-	msg := []byte("foo")
+	msg := []byte("chain")
 	assert.Nil(t, tra.Broadcast(msg))
 
 	rpcb := <-trb.Consume()

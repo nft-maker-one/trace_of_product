@@ -29,6 +29,7 @@ func (t *LocalTransport) Addr() NetAddr {
 }
 
 func (t *LocalTransport) Connect(tr Transport) error {
+	// register the address of other nodes
 	t.lock.Lock()
 	defer t.lock.Unlock()
 	ltr, ok := tr.(*LocalTransport)
@@ -41,6 +42,7 @@ func (t *LocalTransport) Connect(tr Transport) error {
 
 func (t *LocalTransport) Broadcast(payload []byte) error {
 	// payload 是接受的序列化后的 Message 信息
+	// send message to all the nodes registered in its peers list.
 	for _, peer := range t.peers {
 		if err := t.SendMessage(peer.Addr(), payload); err != nil {
 			return err
@@ -51,6 +53,7 @@ func (t *LocalTransport) Broadcast(payload []byte) error {
 
 func (t *LocalTransport) SendMessage(to NetAddr, payload []byte) error {
 	// payload 是序列化后的 Message 信息
+	// send the message to a specific node
 	t.lock.RLock()
 	defer t.lock.RUnlock()
 	if t.addr == to {
