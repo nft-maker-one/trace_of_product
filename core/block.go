@@ -17,6 +17,8 @@ type Header struct {
 	Timestamp     int64
 	Height        int32
 	Nonce         int64
+	Scores        map[int]int
+	Leader        int
 }
 
 type Block struct {

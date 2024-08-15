@@ -20,3 +20,20 @@ func TestGeneratePrivateKey(t *testing.T) {
 	assert.True(t, sig.Verify(pubKey, msg))
 	assert.False(t, sig.Verify(pubKey, msgError))
 }
+
+func TestGenerateKeyPair(t *testing.T) {
+	key := GenerateKeyPair(1)
+	assert.NotNil(t, key)
+	fmt.Println(key)
+}
+
+func TestReadKeyFromFile(t *testing.T) {
+	priKey, err := ReadPriKey(1)
+	assert.Nil(t, err)
+	pubKey, err := ReadPubKey(1)
+	assert.Nil(t, err)
+	msg := []byte("hello jerry")
+	sig, err := priKey.Sign(msg)
+	assert.Nil(t, err)
+	assert.True(t, sig.Verify(*pubKey, msg))
+}

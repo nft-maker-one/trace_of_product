@@ -35,6 +35,11 @@ type Message struct {
 	Data   []byte
 }
 
+type PbftMessage struct {
+	ContentType CommandType
+	Content     Message
+}
+
 type RPCProcessor interface {
 	ProcessMessage(*DecodeMessage) error
 }
