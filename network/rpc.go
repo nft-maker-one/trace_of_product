@@ -1,29 +1,27 @@
 package network
 
 import (
-	"agricultural_meta/core"
-	"bytes"
-	"encoding/gob"
-	"fmt"
-
-	"github.com/sirupsen/logrus"
+	"agricultural_meta/types"
+	"agricultural_meta/utils"
+	"crypto/sha256"
+	"encoding/json"
 )
 
 type MessageType byte
 
 const (
-	MessageTypeTransForm MessageType = 0x1
+	MessageTypeProduce   MessageType = 0x1
 	MessageTypeTransport MessageType = 0x2
 	MessageTypeProcess   MessageType = 0x3
 	MessageTypeStorage   MessageType = 0x4
 	MessageTypeSell      MessageType = 0x5
-	MessageTypeTx        MessageType = 0x6
-	MessageTypeBlock     MessageType = 0x7
+	MessageTypeBlock     MessageType = 0x6
+	MessageTypeTest      MessageType = 0x7
 )
 
 type RPC struct {
-	From    NetAddr
-	Payload []byte
+	ContentType CommandType `json:"content_type"`
+	Payload     []byte      `json:"payload"`
 }
 
 type RPCHandler interface {
@@ -31,13 +29,8 @@ type RPCHandler interface {
 }
 
 type Message struct {
-	Header MessageType
-	Data   []byte
-}
-
-type PbftMessage struct {
-	ContentType CommandType
-	Content     Message
+	Header MessageType `json:"header"`
+	Data   []byte      `json:"data"`
 }
 
 type RPCProcessor interface {
@@ -55,39 +48,6 @@ type DecodeMessage struct {
 
 type RPCDecodeFunc func(RPC) (*DecodeMessage, error)
 
-func DefaultRPCDecodeFunc(rpc RPC) (*DecodeMessage, error) {
-	msg := Message{}
-	if err := gob.NewDecoder(bytes.NewReader(rpc.Payload)).Decode(&msg); err != nil {
-		return nil, fmt.Errorf("failed to decode message")
-	}
-	logrus.WithFields(logrus.Fields{
-		"from": rpc.From,
-		"type": msg.Header,
-	}).Debug("new incoming message")
-	switch msg.Header {
-	case MessageTypeTx:
-		egg := new(core.Eggplant)
-		if err := egg.Decode(core.NewGobEggplantDecoder(bytes.NewReader(msg.Data))); err != nil {
-			return nil, err
-		}
-		return &DecodeMessage{
-			From: rpc.From,
-			Data: egg,
-		}, nil
-	case MessageTypeBlock:
-		block := new(core.Block)
-		if err := block.Decode(core.NewGobBlockDecode(bytes.NewReader(msg.Data))); err != nil {
-			return nil, err
-		}
-		return &DecodeMessage{
-			From: rpc.From,
-			Data: block,
-		}, nil
-	default:
-		return nil, nil
-	}
-}
-
 func NewDefaultRPCHandler(p RPCProcessor) *DefaultRPCProcesser {
 	return &DefaultRPCProcesser{
 		p: p,
@@ -98,28 +58,12 @@ func NewMessage(t MessageType, data []byte) *Message {
 	return &Message{Header: t, Data: data}
 }
 
-func (msg *Message) Bytes() []byte {
-	buf := &bytes.Buffer{}
-	gob.NewEncoder(buf).Encode(msg)
-	return buf.Bytes()
-}
-
-func (h *DefaultRPCProcesser) HandleRPC(rpc RPC) (*DecodeMessage, error) {
-	msg := Message{}
-	if err := gob.NewDecoder(bytes.NewReader(rpc.Payload)).Decode(&msg); err != nil {
-		return nil, fmt.Errorf("failed to decode message from %s : %s", rpc.From, err.Error())
+func (m Message) Hash() types.Hash {
+	data, err := json.Marshal(&m)
+	if err != nil {
+		utils.LogMsg([]string{"Message.Hash"}, []string{"marshal failed"})
+		return types.Hash{}
 	}
-	switch msg.Header {
-	case MessageTypeTx:
-		tx := core.NewEggplant([]byte("initial"))
-		if err := tx.Decode(core.NewGobEggplantDecoder(bytes.NewReader(msg.Data))); err != nil {
-			return nil, err
-		}
-		return &DecodeMessage{
-			From: rpc.From,
-			Data: tx,
-		}, nil
-	default:
-		return nil, fmt.Errorf("invalid message type %x", msg.Header)
-	}
+	hash := sha256.Sum256(data)
+	return types.Hash(hash)
 }

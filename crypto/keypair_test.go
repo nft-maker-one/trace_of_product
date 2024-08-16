@@ -37,3 +37,16 @@ func TestReadKeyFromFile(t *testing.T) {
 	assert.Nil(t, err)
 	assert.True(t, sig.Verify(*pubKey, msg))
 }
+
+func TestSignatureToByte(t *testing.T) {
+	priKey := GeneratePrivateKey()
+	pubKey := priKey.PublicKey()
+	data := []byte("hello jerry")
+	sig, err := priKey.Sign(data)
+	assert.Nil(t, err)
+	sigByte := sig.ToByte()
+	sig1, err := ByteToSignature(sigByte)
+	assert.Nil(t, err)
+	assert.True(t, sig1.Verify(pubKey, data))
+	assert.Equal(t, sig, sig1)
+}

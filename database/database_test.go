@@ -1,6 +1,7 @@
 package database
 
 import (
+	"agricultural_meta/crypto"
 	"agricultural_meta/utils"
 	"fmt"
 	"testing"
@@ -20,7 +21,9 @@ func TestAddNode(t *testing.T) {
 	assert.Nil(t, err)
 	db := InitNodeDb(config.Mysql.Dsn)
 	assert.NotNil(t, db)
-	assert.Nil(t, db.AddNode(1, "127.0.0.1:8081"))
+	key, err := crypto.ReadPubKey(1)
+	assert.Nil(t, err)
+	assert.Nil(t, db.AddNode(1, "127.0.0.1:8081", *key))
 }
 
 func TestDeleteNode(t *testing.T) {

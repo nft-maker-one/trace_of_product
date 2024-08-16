@@ -25,8 +25,6 @@ func GenerateKeyPair(id int) PublicKey {
 	priKeyBytes, err := x509.MarshalECPrivateKey(priKey.key)
 	if err != nil {
 		logrus.Errorln(strconv.Itoa(id) + " node create private key failed" + err.Error())
-	} else {
-		utils.LogMsg([]string{"GenerateKey"}, []string{"create private key successfully for " + strconv.Itoa(id)})
 	}
 	block := &pem.Block{
 		Type:  "ecdsa private key",
@@ -45,8 +43,6 @@ func GenerateKeyPair(id int) PublicKey {
 	pubKeyBytes, err := x509.MarshalPKIXPublicKey(priKey.PublicKey().Key)
 	if err != nil {
 		logrus.Errorln(strconv.Itoa(id) + " node create public key failed" + err.Error())
-	} else {
-		utils.LogMsg([]string{"GenerateKey"}, []string{"create public key successfully for " + strconv.Itoa(id)})
 	}
 	block = &pem.Block{
 		Type:  "ecdsa public key",

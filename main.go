@@ -1,5 +1,11 @@
 package main
 
+import (
+	"agricultural_meta/database"
+)
+
+var DB = &database.NodeDb{}
+
 func main() {
 
 }
