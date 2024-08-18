@@ -1,0 +1,19 @@
+[package]
+name = "plookup"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+merlin = "3.0.0"
+rand = "0.8.5"
+rand_core = { version = "0.6.4", default-features = false }
+num-traits = { version = "0.2", default-features = true }
+ark-bls12-381 = "^0.4.0"
+ark-ec = "0.4.1"
+ark-ff = "0.3.0"
+ark-poly = "0.3.0"
+ark-poly-commit = "^0.4.0"
+ark-std = "0.3.0"
+itertools = "0.13.0"
+rand_chacha = "0.3.1"
+rayon = "1.3.0"
