@@ -7,7 +7,6 @@ import (
 	"agricultural_meta/types"
 	"agricultural_meta/utils"
 	"bytes"
-	"encoding/gob"
 	"encoding/json"
 	"fmt"
 	"math"
@@ -21,7 +20,7 @@ import (
 
 var NodeTables = []Node{}
 
-const BlockInterval = 5
+const BlockInterval = 1
 
 // time.Second 只可以与常数连乘
 
@@ -66,6 +65,7 @@ func NewNodeServer(addr string) *NodeServer {
 	server.isReply = make(map[types.Hash]bool)
 	server.priKey, err = crypto.ReadPriKey(id)
 	server.Interval = BlockInterval
+	server.Pool = NewMemoryPool(500)
 	if err != nil {
 		panic(err)
 	}
@@ -73,6 +73,10 @@ func NewNodeServer(addr string) *NodeServer {
 	if err != nil {
 		panic(err)
 	}
+	NodeTables = append(NodeTables, Node{
+		Id:   server.Id,
+		Addr: server.Addr,
+	})
 	if leaderId == server.Id {
 		server.IsLeader = true
 	}
@@ -100,7 +104,7 @@ func (s *NodeServer) handleRequest(data []byte) {
 	case cCommit:
 		s.handleCommit(rpc.Payload)
 	case cEgg:
-
+		s.handleEgg(rpc.Payload)
 	case cTest:
 		message := Message{}
 		err := json.Unmarshal(rpc.Payload, &message)
@@ -145,7 +149,6 @@ func (s *NodeServer) CreateBlock() {
 	h.UpdateScore(s.Chain, eggs)
 	h.SelectLeader()
 	b, err := core.NewBlock(h, eggs)
-	b.GetHash()
 	if err != nil {
 		utils.LogMsg([]string{"CreateBlock"}, []string{"create new block failed err = " + err.Error()})
 		return
@@ -157,18 +160,20 @@ func (s *NodeServer) CreateBlock() {
 	}
 	s.SequenceId++
 	utils.LogMsg([]string{"CreateBlock"}, []string{fmt.Sprintf("create new visual graph with sequenceId %d", s.SequenceId)})
-	s.MessagePool[b.GetHash()] = *b
+	s.MessagePool[b.Hash(core.BlockHasher{})] = *b
 	pp := PrePrepare{}
 	pp.RequestMessage = *b
-	pp.Digest = b.GetHash()
+	pp.Digest = b.Hash(core.BlockHasher{})
 	pp.SequencId = s.SequenceId
 	buf := bytes.Buffer{}
 	b.Encode(core.NewGobBlockEncoder(&buf))
+	// 对区块编码签名
 	sig, err := s.priKey.Sign(buf.Bytes())
 	if err != nil {
 		utils.LogError([]string{"handleClientRequest"}, []string{fmt.Sprintf("sign error %s ", err.Error())})
 		return
 	}
+	fmt.Printf("hash = %v\n", pp.RequestMessage.Hash(core.BlockHasher{}).String())
 	pp.Sign = sig.ToByte()
 	ppDate, err := json.Marshal(&pp)
 	if err != nil {
@@ -184,9 +189,9 @@ func (s *NodeServer) CreateBlock() {
 
 // 对 rpc 中的 Message decode，验证其中的区块信息，并对 Message 进行签名
 func (s *NodeServer) handleClientRequest(payload []byte) {
-	message := &Message{}
-	gob.NewDecoder(bytes.NewReader(payload)).Decode(message)
-	switch message.Header {
+	// message := &Message{}
+	// gob.NewDecoder(bytes.NewReader(payload)).Decode(message)
+	// switch message.Header {
 	// case MessageTypeBlock:
 	// 	block := new(core.Block)
 	// 	block.Decode(core.NewGobBlockDecode(bytes.NewReader(message.Data)))
@@ -230,45 +235,46 @@ func (s *NodeServer) handleClientRequest(payload []byte) {
 	// 	rpc.ContentType = cPrePrepare
 	// 	rpc.Payload = ppDate
 	// 	s.Broadcast(rpc)
-	case MessageTypeEggplant:
-		egg := new(core.Eggplant)
-		egg.Decode(core.NewGobEggplantDecoder(bytes.NewReader(message.Data)))
-		if egg.EggplantId <= 0 {
-			utils.LogError([]string{"handleClientRequest"}, []string{"eggplant has a invalid id"})
-			return
-		}
-		hash := egg.SetHash(core.EggplantHasher{})
-		if hash != egg.Hash {
-			utils.LogError([]string{"handleClientRequest"}, []string{"eggplant has a invalid hash"})
-			return
-		}
-		err := egg.Sign(*s.priKey)
-		if err != nil {
-			utils.LogMsg([]string{"handleClientRequest"}, []string{"sign error " + err.Error()})
-			return
-		}
-		egg.NodeId = s.Id
-		egg.FirstSeen = time.Now().Unix()
-		buf := &bytes.Buffer{}
-		err = egg.Encode(core.NewGobEggplantEncoder(buf))
-		if err != nil {
-			utils.LogMsg([]string{"handleClientRequest"}, []string{"encode eggplant error " + err.Error()})
-			return
-		}
-		eggMes := &EggMes{}
-		eggMes.Egg = buf.Bytes()
-		eggMes.NodeId = s.Id
-		eggMesBuf := &bytes.Buffer{}
-		err = eggMes.Encode(NewGobEggMesEncoder(eggMesBuf))
-		if err != nil {
-			utils.LogMsg([]string{"handleClientRequest"}, []string{"encode eggMes error " + err.Error()})
-			return
-		}
-		rpc := RPC{}
-		rpc.ContentType = cEgg
-		rpc.Payload = eggMesBuf.Bytes()
-		s.Broadcast(rpc)
+	// case MessageTypeEggplant:
+	egg := new(core.Eggplant)
+	egg.Decode(core.NewGobEggplantDecoder(bytes.NewReader(payload)))
+	if egg.EggplantId <= 0 {
+		utils.LogError([]string{"handleClientRequest"}, []string{"eggplant has a invalid id"})
+		return
 	}
+	hash := egg.SetHash(core.EggplantHasher{})
+	if hash != egg.Hash {
+		utils.LogError([]string{"handleClientRequest"}, []string{"eggplant has a invalid hash"})
+		return
+	}
+	err := egg.Sign(*s.priKey)
+	if err != nil {
+		utils.LogMsg([]string{"handleClientRequest"}, []string{"sign error " + err.Error()})
+		return
+	}
+	egg.NodeId = s.Id
+	egg.FirstSeen = time.Now().Unix()
+	buf := &bytes.Buffer{}
+	err = egg.Encode(core.NewGobEggplantEncoder(buf))
+	if err != nil {
+		utils.LogMsg([]string{"handleClientRequest"}, []string{"encode eggplant error " + err.Error()})
+		return
+	}
+	s.Pool.AddEgg(*egg)
+	eggMes := &EggMes{}
+	eggMes.Egg = buf.Bytes()
+	eggMes.NodeId = s.Id
+	eggMesBuf := &bytes.Buffer{}
+	err = eggMes.Encode(NewGobEggMesEncoder(eggMesBuf))
+	if err != nil {
+		utils.LogMsg([]string{"handleClientRequest"}, []string{"encode eggMes error " + err.Error()})
+		return
+	}
+	rpc := RPC{}
+	rpc.ContentType = cEgg
+	rpc.Payload = eggMesBuf.Bytes()
+	s.Broadcast(rpc)
+	// }
 
 }
 
@@ -283,7 +289,8 @@ func (s *NodeServer) handlePrePrepare(payload []byte) {
 		utils.LogError([]string{"handlePrePrepare"}, []string{fmt.Sprintf("node expected SequencdId [%d] but got [%d]", s.SequenceId+1, pp.SequencId)})
 		return
 	}
-	hash := pp.RequestMessage.GetHash()
+	hash := pp.RequestMessage.Hash(core.BlockHasher{})
+	fmt.Printf("hash = %v\n", pp.RequestMessage.Hash(core.BlockHasher{}).String())
 	if hash != pp.Digest {
 		utils.LogError([]string{"handlePrePrepare"}, []string{"digest is not correct"})
 		return
@@ -484,6 +491,7 @@ func (s *NodeServer) handleEgg(payload []byte) {
 	err = egg.Decode(core.NewGobEggplantDecoder(bytes.NewReader(eggMes.Egg)))
 	if err != nil {
 		utils.LogMsg([]string{"handleEgg"}, []string{"egg decode failed, err = " + err.Error()})
+		return
 	}
 	if egg.EggplantId <= 0 {
 		utils.LogError([]string{"handleEgg"}, []string{"eggplant has a invalid id"})
@@ -529,6 +537,7 @@ func (s *NodeServer) Broadcast(rpc RPC) {
 	if err != nil {
 		utils.LogError([]string{"broadcast"}, []string{"rpc marshal error"})
 	}
+	s.UpdateNodeTable()
 	for _, node := range NodeTables {
 		if node.Id == s.Node.Id {
 			continue
@@ -559,6 +568,14 @@ func (s *NodeServer) SendMessage(rpc RPC, addr string) error {
 	}
 	tcpDial(data, addr)
 	return nil
+}
+
+func (s *NodeServer) UpdateNodeTable() {
+	nodes := s.Db.GetAll()
+	NodeTables = []Node{}
+	for _, node := range nodes {
+		NodeTables = append(NodeTables, Node{Id: node.Id, Addr: node.Addr})
+	}
 }
 
 func randomId() int {

@@ -67,7 +67,7 @@ type Signature struct {
 }
 
 func (sig *Signature) Verify(pubKey []byte, data []byte) bool {
-	pubkey := ByteToPubKey(data)
+	pubkey := ByteToPubKey(pubKey)
 	if pubkey.Key.X == nil {
 		utils.LogMsg([]string{"Verify"}, []string{"public key with wrong format"})
 		return false

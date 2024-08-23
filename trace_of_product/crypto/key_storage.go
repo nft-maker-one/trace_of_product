@@ -13,13 +13,13 @@ import (
 )
 
 func GenerateKeyPair(id int) PublicKey {
-	if _, err := os.Stat("../Keys/" + strconv.Itoa(id)); err == nil {
+	if _, err := os.Stat("./Keys/" + strconv.Itoa(id)); err == nil {
 		utils.LogMsg([]string{"Mkdir"}, []string{"key for  " + strconv.Itoa(id) + " already exist"})
 		key, _ := ReadPubKey(id)
 		return *key
 	}
 	fmt.Println("Creating directory .....")
-	if err := os.Mkdir("../Keys/"+strconv.Itoa(id), 0644); err != nil {
+	if err := os.Mkdir("./Keys/"+strconv.Itoa(id), 0644); err != nil {
 		utils.LogMsg([]string{"Mkdir"}, []string{err.Error()})
 	}
 
@@ -34,7 +34,7 @@ func GenerateKeyPair(id int) PublicKey {
 		Bytes: priKeyBytes,
 	}
 	blockBytes := pem.EncodeToMemory(block)
-	prifile, err := os.OpenFile("../Keys/"+strconv.Itoa(id)+"/"+"PRI_KEY", os.O_CREATE|os.O_RDWR, 0644)
+	prifile, err := os.OpenFile("./Keys/"+strconv.Itoa(id)+"/"+"PRI_KEY", os.O_CREATE|os.O_RDWR, 0644)
 	if err != nil {
 		panic(err)
 	}
@@ -52,7 +52,7 @@ func GenerateKeyPair(id int) PublicKey {
 		Bytes: pubKeyBytes,
 	}
 	blockBytes = pem.EncodeToMemory(block)
-	pubfile, err := os.OpenFile("../Keys/"+strconv.Itoa(id)+"/"+"PUB_KEY", os.O_CREATE|os.O_RDWR, 0644)
+	pubfile, err := os.OpenFile("./Keys/"+strconv.Itoa(id)+"/"+"PUB_KEY", os.O_CREATE|os.O_RDWR, 0644)
 	if err != nil {
 		panic(err)
 	}
@@ -65,7 +65,7 @@ func GenerateKeyPair(id int) PublicKey {
 }
 
 func ReadPriKey(id int) (*PrivateKey, error) {
-	data, err := os.ReadFile("../Keys/" + strconv.Itoa(id) + "/" + "PRI_KEY")
+	data, err := os.ReadFile("./Keys/" + strconv.Itoa(id) + "/" + "PRI_KEY")
 	if err != nil {
 		return nil, err
 	}
@@ -84,7 +84,7 @@ func ReadPriKey(id int) (*PrivateKey, error) {
 }
 
 func ReadPubKey(id int) (*PublicKey, error) {
-	data, err := os.ReadFile("../Keys/" + strconv.Itoa(id) + "/" + "PUB_KEY")
+	data, err := os.ReadFile("./Keys/" + strconv.Itoa(id) + "/" + "PUB_KEY")
 	if err != nil {
 		return nil, err
 	}

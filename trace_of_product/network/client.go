@@ -71,11 +71,14 @@ func (c *ClientNode) ClientUp() {
 		fmt.Println("请依据下面提升输入指令")
 		fmt.Println("1. 更新茄子信息")
 		cmd, err := input.ReadString('\n')
+		cmd = cmd[:len(cmd)-1]
+		fmt.Println("cmd = " + cmd)
 		if err != nil {
 			utils.LogMsg([]string{"ClientUp"}, []string{"read from cmd failed err=" + err.Error()})
 			continue
 		}
-		if cmd == "1" {
+		if cmd != "" {
+			fmt.Println("xxxxx")
 			data := core.MetaData{
 				EggplantId:      rand.Intn(1000),
 				ProductHeight:   rand.Intn(math.MaxInt),
@@ -96,10 +99,9 @@ func (c *ClientNode) ClientUp() {
 				utils.LogMsg([]string{"ClientUp"}, []string{"encode block eggplant err = " + err.Error()})
 				continue
 			}
-
 			rpc := RPC{}
 			rpc.Payload = buf.Bytes()
-			rpc.ContentType = cEgg
+			rpc.ContentType = cRequest
 			rByte, err := json.Marshal(rpc)
 			if err != nil {
 				utils.LogMsg([]string{"ClientUp"}, []string{"encode rpc error err = " + err.Error()})

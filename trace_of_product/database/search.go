@@ -27,3 +27,9 @@ func (nd *NodeDb) GetNum() int {
 	utils.LogMsg([]string{"GetNum"}, []string{"当前联盟链共有节点：" + strconv.Itoa(int(count)) + " 个"})
 	return int(count)
 }
+
+func (nd *NodeDb) GetAll() []ConsortiumNode {
+	nodes := []ConsortiumNode{}
+	nd.DB.Find(&nodes)
+	return nodes
+}
