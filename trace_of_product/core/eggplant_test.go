@@ -32,7 +32,7 @@ func randomMetaData() MetaData {
 func randomEggpalnt() *Eggplant {
 	egg := &Eggplant{}
 	egg.MetaData = randomMetaData()
-	egg.SetFirsstSeen(time.Now().Unix())
+	egg.FirstSeen = time.Now().Unix()
 	return egg
 
 }
@@ -56,14 +56,14 @@ func TestEggplantSignAndVerify(t *testing.T) {
 
 func TestEggplantHash(t *testing.T) {
 	egg := randomEggpalnt()
-	egg.SetHash(egg.Hash(EggplantHasher{}))
-	assert.False(t, egg.hash.IsZero())
-	logrus.Info("eggHash:", egg.hash)
+	egg.SetHash(EggplantHasher{})
+	assert.False(t, egg.Hash.IsZero())
+	logrus.Info("egg:", egg.Hash)
 }
 
 func TestEggplantEncodeDecode(t *testing.T) {
 	egg := randomEggpalnt()
-	egg.SetHash(egg.Hash(EggplantHasher{}))
+	egg.SetHash(EggplantHasher{})
 	priKey := crypto.GeneratePrivateKey()
 	assert.Nil(t, egg.Sign(priKey))
 	buf := &bytes.Buffer{}

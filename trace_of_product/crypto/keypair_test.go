@@ -9,9 +9,7 @@ import (
 
 func TestGeneratePrivateKey(t *testing.T) {
 	priKey := GeneratePrivateKey()
-	pubKey := priKey.PublicKey()
-	address := pubKey.Address()
-	fmt.Println(address.String())
+	pubKey := priKey.PublicKey().ToSlice()
 	msg := []byte("hello world")
 	msgError := []byte("hi world")
 	sig, err := priKey.Sign(msg)
@@ -31,11 +29,12 @@ func TestReadKeyFromFile(t *testing.T) {
 	priKey, err := ReadPriKey(1)
 	assert.Nil(t, err)
 	pubKey, err := ReadPubKey(1)
+
 	assert.Nil(t, err)
 	msg := []byte("hello jerry")
 	sig, err := priKey.Sign(msg)
 	assert.Nil(t, err)
-	assert.True(t, sig.Verify(*pubKey, msg))
+	assert.True(t, sig.Verify((*pubKey).ToSlice(), msg))
 }
 
 func TestSignatureToByte(t *testing.T) {
@@ -47,6 +46,6 @@ func TestSignatureToByte(t *testing.T) {
 	sigByte := sig.ToByte()
 	sig1, err := ByteToSignature(sigByte)
 	assert.Nil(t, err)
-	assert.True(t, sig1.Verify(pubKey, data))
+	assert.True(t, sig1.Verify(pubKey.ToSlice(), data))
 	assert.Equal(t, sig, sig1)
 }

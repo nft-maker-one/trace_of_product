@@ -7,6 +7,8 @@ DROP TABLE IF EXISTS consortium_nodes
 CREATE TABLE consortium_nodes (
     id INT,
     addr VARCHAR(40),
-    pub_key BLOB
-)
+    pub_key BLOB,
+    create_time BIGINT
+);
+
 

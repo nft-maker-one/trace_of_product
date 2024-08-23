@@ -26,26 +26,15 @@ type MetaData struct {
 // Eggplant is maingly consist of 5 part
 type Eggplant struct {
 	MetaData
-	PublickKey crypto.PublicKey  //the Validator of this Eggplant
-	Signature  *crypto.Signature //the Signature of the Validator
-	hash       types.Hash        //the digest for eggplant's metadata
-	firstSeen  int64             //the creation time of the eggplant
+	NodeId     int
+	PublickKey []byte     //the Validator of this Eggplant
+	Signature  []byte     //the Signature of the Validator
+	Hash       types.Hash //the digest for eggplant's metadata
+	FirstSeen  int64      //the creation time of the eggplant
 }
 
-func NewEggplant(data []byte) *Eggplant {
-	return &Eggplant{PublickKey: crypto.PublicKey{}, Signature: &crypto.Signature{}}
-}
-
-func (eg *Eggplant) SetFirsstSeen(t int64) {
-	eg.firstSeen = t
-}
-
-func (eg *Eggplant) FirstSeen() int64 {
-	return eg.firstSeen
-}
-
-func (eg *Eggplant) SetHash(hash types.Hash) {
-	eg.hash = hash
+func NewEggplant(data MetaData) *Eggplant {
+	return &Eggplant{MetaData: data}
 }
 
 func (eg *Eggplant) EncodeMetaData() ([]byte, error) {
@@ -73,9 +62,9 @@ func (eg *Eggplant) Sign(priKey crypto.PrivateKey) error {
 		return err
 	}
 	// set the Validator for the MetaData
-	eg.PublickKey = priKey.PublicKey()
+	eg.PublickKey = priKey.PublicKey().ToSlice()
 	// record the signature
-	eg.Signature = sig
+	eg.Signature = sig.ToByte()
 	return nil
 }
 
@@ -89,18 +78,24 @@ func (eg *Eggplant) Verify() error {
 	if eg.Signature == nil {
 		return fmt.Errorf("Eggplant without signature")
 	}
-	if !eg.Signature.Verify(eg.PublickKey, data) {
+
+	sig, err := crypto.ByteToSignature(eg.Signature)
+	if err != nil {
+		return err
+	}
+	if !sig.Verify(eg.PublickKey, data) {
 		return fmt.Errorf("Eggplant with wrong validator")
 	}
 	return nil
 }
 
-func (eg *Eggplant) Hash(hasher Hasher[*Eggplant]) types.Hash {
+func (eg *Eggplant) SetHash(hasher Hasher[*Eggplant]) types.Hash {
 	//whether the hash existS
-	if eg.hash.IsZero() {
-		eg.hash = hasher.Hash(eg)
+	if eg.Hash.IsZero() {
+		eg.Hash = hasher.Hash(eg)
 	}
 	return hasher.Hash(eg)
+
 }
 
 func (eg *Eggplant) Decode(dec Decoder[*Eggplant]) error {

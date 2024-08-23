@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"agricultural_meta/types"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -22,4 +23,13 @@ func TestYaml(t *testing.T) {
 	config, err := NewConfig("../config.yaml")
 	assert.Nil(t, err)
 	LogMsg([]string{"dsn"}, []string{config.Mysql.Dsn})
+}
+
+func TestCompareBytes(t *testing.T) {
+	a := types.RandomBytes(20)
+	b := make([]byte, 20)
+	copy(b, a)
+	assert.True(t, CompareBytes(a, b))
+	b[1] = 13
+	assert.False(t, CompareBytes(a, b))
 }

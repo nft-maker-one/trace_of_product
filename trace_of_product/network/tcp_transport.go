@@ -23,12 +23,16 @@ func tcpDial(data []byte, addr string) {
 	conn.Close()
 }
 
-func (p *NodeServer) NodeUp() {
+func (p *NodeServer) StartServer() {
 	listen, err := net.Listen("tcp", p.Addr)
 	if err != nil {
 		panic(err)
 	}
+	if p.IsLeader {
+		go p.CreateBlock()
+	}
 	utils.LogMsg([]string{"NodeUp"}, []string{"Server started successfully"})
+
 	for {
 		conn, err := listen.Accept()
 		if err != nil {

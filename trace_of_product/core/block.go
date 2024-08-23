@@ -10,6 +10,8 @@ import (
 	"time"
 )
 
+const AddPoint = 1
+
 type Header struct {
 	Version       int32
 	PrevBlockHash types.Hash
@@ -21,12 +23,40 @@ type Header struct {
 	Leader        int
 }
 
+// Datahash 是记录对区块中茄子信息的哈希
+// hash 是整个区块信息的哈希
 type Block struct {
 	*Header
 	Eggplants []*Eggplant
-	Validator crypto.PublicKey
-	Signature *crypto.Signature
+	Validator []byte
+	Signature []byte
 	hash      types.Hash
+}
+
+func (h *Header) UpdateScore(bc *Blockchain, eggs []*Eggplant) {
+	prevHeader := bc.Chains[bc.Height()]
+	prevScore := prevHeader.Scores
+	newScore := make(map[int]int)
+	for _, egg := range eggs {
+		if _, ok := newScore[egg.NodeId]; !ok {
+			newScore[egg.NodeId] = prevScore[egg.NodeId] / 2
+		}
+		newScore[egg.EggplantId]++
+	}
+	prevScore[prevHeader.Leader] = 0
+	h.Scores = prevScore
+}
+
+func (h *Header) SelectLeader() {
+	max := 0
+	leader := 0
+	for k, v := range h.Scores {
+		if v > max {
+			leader = k
+			max = v
+		}
+	}
+	h.Leader = leader
 }
 
 func NewBlock(h *Header, eggs []*Eggplant) (*Block, error) {
@@ -39,8 +69,8 @@ func (b *Block) Sign(priKey crypto.PrivateKey) error {
 	if err != nil {
 		return err
 	}
-	b.Signature = sig
-	b.Validator = priKey.PublicKey()
+	b.Signature = sig.ToByte()
+	b.Validator = priKey.PublicKey().ToSlice()
 	return nil
 }
 
@@ -48,8 +78,12 @@ func (b *Block) Verify() error {
 	if b.Signature == nil {
 		return fmt.Errorf("block has no validator")
 	}
+	sig, err := crypto.ByteToSignature(b.Signature)
+	if err != nil {
+		return err
+	}
 
-	if !b.Signature.Verify(b.Validator, b.HeaderData()) {
+	if !sig.Verify(b.Validator, b.HeaderData()) {
 		return fmt.Errorf("block has invalid validator")
 	}
 	dataHash, err := CalculateDataHash(b.Eggplants)
@@ -77,6 +111,13 @@ func (b *Block) Encode(enc Encoder[*Block]) error {
 func (b *Block) Hash(hasher Hasher[*Header]) types.Hash {
 	if b.hash.IsZero() {
 		b.hash = hasher.Hash(b.Header)
+	}
+	return b.hash
+}
+
+func (b *Block) GetHash() types.Hash {
+	if b.hash.IsZero() {
+		b.hash = BlockHasher{}.Hash(b.Header)
 	}
 	return b.hash
 }

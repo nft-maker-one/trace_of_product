@@ -1,6 +1,7 @@
 package core
 
 import (
+	"agricultural_meta/types"
 	"fmt"
 	"sync"
 
@@ -8,10 +9,36 @@ import (
 )
 
 type Blockchain struct {
-	store     Storage
 	lock      sync.RWMutex
 	Chains    []*Block
 	validator Validator
+}
+
+func CreateChain(leadrId int) *Blockchain {
+	chain := &Blockchain{}
+	chain.lock = sync.RWMutex{}
+	chain.validator = NewBlockValidator(chain)
+	chain.Chains = make([]*Block, 0)
+	h := &Header{
+		Version:       0,
+		PrevBlockHash: types.Hash{},
+		DataHash:      types.Hash{},
+		Timestamp:     0,
+		Height:        0,
+		Nonce:         0,
+		Leader:        leadrId,
+		Scores:        make(map[int]int),
+	}
+	b, err := NewBlock(h, nil)
+	if err != nil {
+		panic(err)
+	}
+	err = chain.addBlockWithoutValidation(b)
+	if err != nil {
+		panic(err)
+	}
+	return chain
+
 }
 
 func (bc *Blockchain) Height() int {
@@ -37,16 +64,6 @@ func (bc *Blockchain) GetBlock(height int) (*Block, error) {
 	return bc.Chains[height], nil
 }
 
-func NewBlockchain(genesis *Block) (*Blockchain, error) {
-	bc := &Blockchain{
-		Chains: []*Block{},
-		store:  &MemoryStore{},
-	}
-	bc.validator = NewBlockValidator(bc)
-	err := bc.addBlockWithoutValidation(genesis)
-	return bc, err
-}
-
 func (bc *Blockchain) SetValidator(v Validator) {
 	bc.validator = v
 }
@@ -70,4 +87,18 @@ func (bc *Blockchain) addBlockWithoutValidation(b *Block) error {
 	bc.Chains = append(bc.Chains, b)
 
 	return nil
+}
+
+func NewBlockchain(genesis *Block) (*Blockchain, error) {
+	bc := &Blockchain{
+		lock:   sync.RWMutex{},
+		Chains: make([]*Block, 0),
+	}
+	bc.validator = NewBlockValidator(bc)
+	err := bc.addBlockWithoutValidation(genesis)
+	return bc, err
+}
+
+func (bc *Blockchain) GetPrevHash() types.Hash {
+	return bc.Chains[bc.Height()].GetHash()
 }

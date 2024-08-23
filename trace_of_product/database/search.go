@@ -3,6 +3,7 @@ package database
 import (
 	"agricultural_meta/utils"
 	"fmt"
+	"strconv"
 
 	"github.com/sirupsen/logrus"
 )
@@ -17,4 +18,12 @@ func (nd *NodeDb) SearchNodeById(id int) (*ConsortiumNode, error) {
 		logrus.Errorln(res.Error.Error())
 	}
 	return &node, res.Error
+}
+
+func (nd *NodeDb) GetNum() int {
+	node := ConsortiumNode{}
+	var count int64
+	nd.DB.Model(&node).Count(&count)
+	utils.LogMsg([]string{"GetNum"}, []string{"当前联盟链共有节点：" + strconv.Itoa(int(count)) + " 个"})
+	return int(count)
 }

@@ -16,7 +16,8 @@ const (
 	MessageTypeStorage   MessageType = 0x4
 	MessageTypeSell      MessageType = 0x5
 	MessageTypeBlock     MessageType = 0x6
-	MessageTypeTest      MessageType = 0x7
+	MessageTypeEggplant  MessageType = 0x7
+	MessageTypeTest      MessageType = 0x8
 )
 
 type RPC struct {
@@ -30,7 +31,8 @@ type RPCHandler interface {
 
 type Message struct {
 	Header MessageType `json:"header"`
-	Data   []byte      `json:"data"`
+	Addr   string
+	Data   []byte `json:"data"`
 }
 
 type RPCProcessor interface {

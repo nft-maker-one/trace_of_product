@@ -15,11 +15,14 @@ import (
 func GenerateKeyPair(id int) PublicKey {
 	if _, err := os.Stat("../Keys/" + strconv.Itoa(id)); err == nil {
 		utils.LogMsg([]string{"Mkdir"}, []string{"key for  " + strconv.Itoa(id) + " already exist"})
+		key, _ := ReadPubKey(id)
+		return *key
 	}
 	fmt.Println("Creating directory .....")
 	if err := os.Mkdir("../Keys/"+strconv.Itoa(id), 0644); err != nil {
 		utils.LogMsg([]string{"Mkdir"}, []string{err.Error()})
 	}
+
 	utils.LogMsg([]string{"Mkdir"}, []string{"key for  " + strconv.Itoa(id) + " created succesfully"})
 	priKey := GeneratePrivateKey()
 	priKeyBytes, err := x509.MarshalECPrivateKey(priKey.key)

@@ -2,6 +2,7 @@ package crypto
 
 import (
 	"agricultural_meta/types"
+	"agricultural_meta/utils"
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
@@ -51,6 +52,7 @@ func ByteToPubKey(data []byte) PublicKey {
 	key := ecdsa.PublicKey{}
 	key.X = x
 	key.Y = y
+	key.Curve = elliptic.P256()
 	return PublicKey{Key: &key}
 }
 
@@ -64,8 +66,13 @@ type Signature struct {
 	S *big.Int
 }
 
-func (sig *Signature) Verify(pubKey PublicKey, data []byte) bool {
-	res := ecdsa.Verify(pubKey.Key, data, sig.R, sig.S)
+func (sig *Signature) Verify(pubKey []byte, data []byte) bool {
+	pubkey := ByteToPubKey(data)
+	if pubkey.Key.X == nil {
+		utils.LogMsg([]string{"Verify"}, []string{"public key with wrong format"})
+		return false
+	}
+	res := ecdsa.Verify(pubkey.Key, data, sig.R, sig.S)
 	return res
 }
 
