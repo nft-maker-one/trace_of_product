@@ -7,6 +7,7 @@ import (
 	"agricultural_meta/types"
 	"agricultural_meta/utils"
 	"bytes"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"math"
@@ -62,6 +63,7 @@ func NewNodeServer(addr string) *NodeServer {
 	server.MessagePool = make(map[types.Hash]core.Block)
 	server.PrePareConfirmCount = make(map[types.Hash]map[int]bool)
 	server.CommitConfirmCount = make(map[types.Hash]map[int]bool)
+	server.IsCommitBroadcast = make(map[types.Hash]bool)
 	server.isReply = make(map[types.Hash]bool)
 	server.priKey, err = crypto.ReadPriKey(id)
 	server.Interval = BlockInterval
@@ -117,7 +119,7 @@ func (s *NodeServer) handleRequest(data []byte) {
 }
 
 func (s *NodeServer) CreateBlock() {
-	time.Sleep(60 * BlockInterval * time.Second)
+	time.Sleep(20 * BlockInterval * time.Second)
 	eggs := []*core.Eggplant{}
 	if s.Pool.fifo.len > s.Pool.Cap {
 		for i := 0; i < s.Pool.Cap; i++ {
@@ -160,21 +162,18 @@ func (s *NodeServer) CreateBlock() {
 	}
 	s.SequenceId++
 	utils.LogMsg([]string{"CreateBlock"}, []string{fmt.Sprintf("create new visual graph with sequenceId %d", s.SequenceId)})
-	s.MessagePool[b.Hash(core.BlockHasher{})] = *b
+
 	pp := PrePrepare{}
 	pp.RequestMessage = *b
-	pp.Digest = b.Hash(core.BlockHasher{})
 	pp.SequencId = s.SequenceId
-	buf := bytes.Buffer{}
-	b.Encode(core.NewGobBlockEncoder(&buf))
-	// 对区块编码签名
-	sig, err := s.priKey.Sign(buf.Bytes())
+	pp.Digest = b.Hash(core.BlockHasher{})
+	sig, err := s.priKey.Sign(b.Header.Bytes())
 	if err != nil {
 		utils.LogError([]string{"handleClientRequest"}, []string{fmt.Sprintf("sign error %s ", err.Error())})
 		return
 	}
-	fmt.Printf("hash = %v\n", pp.RequestMessage.Hash(core.BlockHasher{}).String())
 	pp.Sign = sig.ToByte()
+	s.MessagePool[b.Hash(core.BlockHasher{})] = *b
 	ppDate, err := json.Marshal(&pp)
 	if err != nil {
 		utils.LogMsg([]string{"handleClientRequest"}, []string{"prePrepare marshal failed"})
@@ -274,13 +273,13 @@ func (s *NodeServer) handleClientRequest(payload []byte) {
 	rpc.ContentType = cEgg
 	rpc.Payload = eggMesBuf.Bytes()
 	s.Broadcast(rpc)
-	// }
 
 }
 
 func (s *NodeServer) handlePrePrepare(payload []byte) {
 	pp := &PrePrepare{}
 	err := json.Unmarshal(payload, pp)
+	fmt.Println(pp)
 	if err != nil {
 		utils.LogError([]string{"handlePrePrepare"}, []string{err.Error()})
 		return
@@ -290,7 +289,6 @@ func (s *NodeServer) handlePrePrepare(payload []byte) {
 		return
 	}
 	hash := pp.RequestMessage.Hash(core.BlockHasher{})
-	fmt.Printf("hash = %v\n", pp.RequestMessage.Hash(core.BlockHasher{}).String())
 	if hash != pp.Digest {
 		utils.LogError([]string{"handlePrePrepare"}, []string{"digest is not correct"})
 		return
@@ -314,13 +312,11 @@ func (s *NodeServer) handlePrePrepare(payload []byte) {
 	}
 	// 验证是否得到公钥节点签名
 	sig, err := crypto.ByteToSignature(pp.Sign)
-	buf := bytes.Buffer{}
-	pp.RequestMessage.Encode(core.NewGobBlockEncoder(&buf))
 	if err != nil {
 		utils.LogError([]string{"handlePrePrepare"}, []string{"the signature has a fault in decode format"})
 		return
 	}
-	if !sig.Verify(node.PubKey, buf.Bytes()) {
+	if !sig.Verify(node.PubKey, pp.RequestMessage.Header.Bytes()) {
 		utils.LogError([]string{"handlePrePrepare"}, []string{"refuse prepare,the PrePrepare Message is not signed by the Leader Node"})
 		return
 	}
@@ -332,6 +328,7 @@ func (s *NodeServer) handlePrePrepare(payload []byte) {
 
 	p.Digest = pp.Digest
 	p.NodeId = s.Id
+	p.SequencId = s.SequenceId
 	sig, err = s.priKey.Sign(hash[:])
 	if err != nil {
 		utils.LogError([]string{"handlePrePrepare"}, []string{"refuse prepare,the PrePrepare Message is not signed by the Leader Node"})
@@ -392,6 +389,7 @@ func (s *NodeServer) handlePrepare(payload []byte) {
 	if pNodeNum >= threshold && !s.IsCommitBroadcast[p.Digest] {
 		nonce := uint64(randomId())
 		signCommit := CommitData(p.Digest, nonce)
+		fmt.Printf("commitData = %s", hex.EncodeToString(signCommit))
 		sig, err := s.priKey.Sign(signCommit)
 		if err != nil {
 			utils.LogError([]string{"handlePrepare"}, []string{"sign commit data failed, err=", err.Error()})
@@ -399,7 +397,7 @@ func (s *NodeServer) handlePrepare(payload []byte) {
 		c := new(Commit)
 		c.Sign = sig.ToByte()
 		c.Digest = p.Digest
-		c.NodeId = p.NodeId
+		c.NodeId = s.Node.Id
 		c.SequenceId = p.SequencId
 		c.Nonce = nonce
 		rpc := RPC{}
@@ -420,7 +418,7 @@ func (s *NodeServer) handleCommit(payload []byte) {
 	c := new(Commit)
 	err := json.Unmarshal(payload, &c)
 	if err != nil {
-		utils.LogError([]string{"handleCommit"}, []string{"payload is not the format of commit err=", err.Error()})
+		utils.LogError([]string{"handleCommit"}, []string{"payload is not the format of commit err=" + err.Error()})
 	}
 	if _, ok := s.PrePareConfirmCount[c.Digest]; !ok {
 		utils.LogError([]string{"handleCommtit"}, []string{"the prepare is not storage in prepare pool"})
@@ -434,6 +432,7 @@ func (s *NodeServer) handleCommit(payload []byte) {
 		return
 	}
 	cData := CommitData(c.Digest, c.Nonce)
+	fmt.Printf("commitData = %s", hex.EncodeToString(cData))
 	sig, err := crypto.ByteToSignature(c.Sign)
 
 	if !sig.Verify(cNode.PubKey, cData) {
@@ -451,12 +450,12 @@ func (s *NodeServer) handleCommit(payload []byte) {
 		// dec := core.NewGobBlockDecode(bytes.NewReader(message.Data))
 		// err := dec.Decode(block)
 		if err != nil {
-			utils.LogError([]string{"handleCommit"}, []string{"decode block failed err=", err.Error()})
+			utils.LogError([]string{"handleCommit"}, []string{"decode block failed err=" + err.Error()})
 			return
 		}
 		err = s.Chain.AddBlock(&block)
 		if err != nil {
-			utils.LogMsg([]string{"handleCommit"}, []string{"block is invalid err= ", err.Error()})
+			utils.LogMsg([]string{"handleCommit"}, []string{"block is invalid err= " + err.Error()})
 			return
 		}
 		utils.LogMsg([]string{"handleCommit"}, []string{""})

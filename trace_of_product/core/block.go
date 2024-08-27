@@ -30,7 +30,7 @@ type Block struct {
 	Eggplants []*Eggplant
 	Validator []byte
 	Signature []byte
-	hash      types.Hash
+	BlockHash types.Hash
 }
 
 func (h *Header) UpdateScore(bc *Blockchain, eggs []*Eggplant) {
@@ -65,7 +65,7 @@ func NewBlock(h *Header, eggs []*Eggplant) (*Block, error) {
 
 func (b *Block) Sign(priKey crypto.PrivateKey) error {
 	// use ecdsa to sign the headerData
-	sig, err := priKey.Sign(b.HeaderData())
+	sig, err := priKey.Sign(b.Header.Bytes())
 	if err != nil {
 		return err
 	}
@@ -83,7 +83,7 @@ func (b *Block) Verify() error {
 		return err
 	}
 
-	if !sig.Verify(b.Validator, b.HeaderData()) {
+	if !sig.Verify(b.Validator, b.Header.Bytes()) {
 		return fmt.Errorf("block has invalid validator")
 	}
 	dataHash, err := CalculateDataHash(b.Eggplants)
@@ -109,17 +109,17 @@ func (b *Block) Encode(enc Encoder[*Block]) error {
 }
 
 func (b *Block) Hash(hasher Hasher[*Header]) types.Hash {
-	if b.hash.IsZero() {
-		b.hash = hasher.Hash(b.Header)
+	if b.BlockHash.IsZero() {
+		b.BlockHash = hasher.Hash(b.Header)
 	}
-	return b.hash
+	return b.BlockHash
 }
 
 func (b *Block) GetHash() types.Hash {
-	if b.hash.IsZero() {
-		b.hash = BlockHasher{}.Hash(b.Header)
+	if b.BlockHash.IsZero() {
+		b.BlockHash = BlockHasher{}.Hash(b.Header)
 	}
-	return b.hash
+	return b.BlockHash
 }
 
 // use gobEncoder to encode Header Data
@@ -131,10 +131,22 @@ func (b *Block) HeaderData() []byte {
 }
 
 func (h *Header) Bytes() []byte {
-	buf := &bytes.Buffer{}
-	enc := gob.NewEncoder(buf)
-	enc.Encode(h)
-	return buf.Bytes()
+	// buf := &bytes.Buffer{}
+	// enc := gob.NewEncoder(buf)
+	// enc.Encode(h)
+	// return buf.Bytes()
+	res := make([]byte, 0)
+	res = append(res, byte(h.Version))
+	res = append(res, h.PrevBlockHash[:]...)
+	res = append(res, h.DataHash[:]...)
+	res = append(res, byte(h.Timestamp))
+	res = append(res, byte(h.Height))
+	res = append(res, byte(h.Nonce))
+	for k, v := range h.Scores {
+		res = append(res, byte(k+v))
+	}
+	res = append(res, byte(h.Leader))
+	return res
 }
 
 func CalculateDataHash(eggs []*Eggplant) (hash types.Hash, err error) {

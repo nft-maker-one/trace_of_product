@@ -29,6 +29,7 @@ func (v *BlockValidator) ValidateBlock(b *Block) error {
 	if err != nil {
 		return nil
 	}
+
 	hash := BlockHasher{}.Hash(prevBlock.Header)
 	// whether the prevHash is correct
 	if hash != b.PrevBlockHash {

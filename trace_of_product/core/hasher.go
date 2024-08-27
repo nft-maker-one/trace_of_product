@@ -21,6 +21,7 @@ type EggplantHasher struct {
 
 func (EggplantHasher) Hash(e *Eggplant) types.Hash {
 	data, _ := e.EncodeMetaData()
+
 	h := sha256.Sum256(data)
 	return types.Hash(h)
 }

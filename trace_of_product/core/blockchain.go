@@ -81,7 +81,7 @@ func (bc *Blockchain) addBlockWithoutValidation(b *Block) error {
 	logrus.WithFields(
 		logrus.Fields{
 			"msg":  "create block",
-			"hash": b.hash,
+			"hash": b.Hash(BlockHasher{}),
 		},
 	).Println()
 	bc.Chains = append(bc.Chains, b)
