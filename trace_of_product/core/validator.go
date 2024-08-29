@@ -25,15 +25,11 @@ func (v *BlockValidator) ValidateBlock(b *Block) error {
 	if err := b.Verify(); err != nil {
 		return err
 	}
-	prevBlock, err := v.bc.GetBlock(int(b.Height) - 1)
-	if err != nil {
-		return nil
-	}
 
-	hash := BlockHasher{}.Hash(prevBlock.Header)
+	prevBlock := v.bc.Chains[v.bc.Height()]
 	// whether the prevHash is correct
-	if hash != b.PrevBlockHash {
-		return fmt.Errorf("the hash of the previous block is %v", b.PrevBlockHash)
+	if b.PrevBlockHash != prevBlock.BlockHash {
+		return fmt.Errorf("the hash of the previous block is %v but acutual got %v", prevBlock.BlockHash, b.PrevBlockHash)
 	}
 	return nil
 }

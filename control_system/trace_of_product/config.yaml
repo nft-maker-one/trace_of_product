@@ -1,0 +1,3 @@
+# 数据库配置
+mysql:
+  dsn: "root:lwj123456@tcp(127.0.0.1:3306)/agri_chain?charset=utf8mb4&parseTime=True&loc=Local"

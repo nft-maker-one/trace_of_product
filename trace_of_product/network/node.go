@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"math"
 	"math/rand"
+	"net/http"
 	"strconv"
 	"sync"
 	"time"
@@ -119,7 +120,7 @@ func (s *NodeServer) handleRequest(data []byte) {
 }
 
 func (s *NodeServer) CreateBlock() {
-	time.Sleep(20 * BlockInterval * time.Second)
+	time.Sleep(BlockInterval * 30 * time.Second)
 	eggs := []*core.Eggplant{}
 	if s.Pool.fifo.len > s.Pool.Cap {
 		for i := 0; i < s.Pool.Cap; i++ {
@@ -173,6 +174,7 @@ func (s *NodeServer) CreateBlock() {
 		return
 	}
 	pp.Sign = sig.ToByte()
+	b.Hash(core.BlockHasher{})
 	s.MessagePool[b.Hash(core.BlockHasher{})] = *b
 	ppDate, err := json.Marshal(&pp)
 	if err != nil {
@@ -188,91 +190,74 @@ func (s *NodeServer) CreateBlock() {
 
 // 对 rpc 中的 Message decode，验证其中的区块信息，并对 Message 进行签名
 func (s *NodeServer) handleClientRequest(payload []byte) {
-	// message := &Message{}
-	// gob.NewDecoder(bytes.NewReader(payload)).Decode(message)
-	// switch message.Header {
-	// case MessageTypeBlock:
-	// 	block := new(core.Block)
-	// 	block.Decode(core.NewGobBlockDecode(bytes.NewReader(message.Data)))
-	// 	if block.Height != int32(s.Chain.Height()) {
-	// 		utils.LogMsg([]string{"handleClientRequest"}, []string{fmt.Sprintf("expect block with height %d but got %d", s.Chain.Height(), block.Height)})
-	// 		return
-	// 	}
-	// 	hash := block.Hash(core.BlockHasher{})
-	// 	if hash != block.DataHash {
-	// 		utils.LogMsg([]string{"handleClientRequest"}, []string{"hash not correct in the block"})
-	// 		return
-	// 	}
-	// 	sig, err := crypto.ByteToSignature(block.Signature)
-	// 	if err != nil {
-	// 		utils.LogMsg([]string{"handleClientRequest"}, []string{"signature format error err = " + err.Error()})
-	// 		return
-	// 	}
-	// 	if !sig.Verify(block.Validator, block.DataHash[:]) {
-	// 		utils.LogMsg([]string{"handleClientRequest"}, []string{fmt.Sprintf("block [%v] has a wrong validator", block.DataHash)})
-	// 	}
-	// 	utils.LogMsg([]string{"handleClientRequest"}, []string{fmt.Sprintf("verification completed, block [%v] is valid", block.DataHash)})
-	// 	s.SequenceId++
-	// 	utils.LogMsg([]string{"handleClientRequest"}, []string{fmt.Sprintf("create new visual graph with sequenceId %d", s.SequenceId)})
-	// 	s.MessagePool[block.DataHash] = *message
-	// 	pp := PrePrepare{}
-	// 	pp.RequestMessage = *message
-	// 	pp.Digest = types.Hash(sha256.Sum256(payload))
-	// 	pp.SequencId = s.SequenceId
-	// 	sig, err = s.priKey.Sign(payload)
-	// 	if err != nil {
-	// 		utils.LogError([]string{"handleClientRequest"}, []string{fmt.Sprintf("sign error %s ", err.Error())})
-	// 		return
-	// 	}
-	// 	pp.Sign = sig.ToByte()
-	// 	ppDate, err := json.Marshal(&pp)
-	// 	if err != nil {
-	// 		utils.LogMsg([]string{"handleClientRequest"}, []string{"prePrepare marshal failed"})
-	// 		return
-	// 	}
-	// 	rpc := RPC{}
-	// 	rpc.ContentType = cPrePrepare
-	// 	rpc.Payload = ppDate
-	// 	s.Broadcast(rpc)
-	// case MessageTypeEggplant:
-	egg := new(core.Eggplant)
-	egg.Decode(core.NewGobEggplantDecoder(bytes.NewReader(payload)))
-	if egg.EggplantId <= 0 {
-		utils.LogError([]string{"handleClientRequest"}, []string{"eggplant has a invalid id"})
-		return
-	}
-	hash := egg.SetHash(core.EggplantHasher{})
-	if hash != egg.Hash {
-		utils.LogError([]string{"handleClientRequest"}, []string{"eggplant has a invalid hash"})
-		return
-	}
-	err := egg.Sign(*s.priKey)
+	req := ClientRequest{}
+	err := json.Unmarshal(payload, &req)
 	if err != nil {
-		utils.LogMsg([]string{"handleClientRequest"}, []string{"sign error " + err.Error()})
-		return
+		utils.LogMsg([]string{"handleClientRequest"}, []string{"client request decode failed err = " + err.Error()})
 	}
-	egg.NodeId = s.Id
-	egg.FirstSeen = time.Now().Unix()
-	buf := &bytes.Buffer{}
-	err = egg.Encode(core.NewGobEggplantEncoder(buf))
-	if err != nil {
-		utils.LogMsg([]string{"handleClientRequest"}, []string{"encode eggplant error " + err.Error()})
-		return
+	switch req.Header {
+	case "Upload":
+		egg := new(core.Eggplant)
+		egg.Decode(core.NewGobEggplantDecoder(bytes.NewReader(req.Content)))
+		// fmt.Println(egg)
+		if egg.EggplantId <= 0 {
+			utils.LogError([]string{"handleClientRequest"}, []string{"eggplant has a invalid id"})
+			return
+		}
+		hash := egg.SetHash(core.EggplantHasher{})
+		if hash != egg.Hash {
+			utils.LogError([]string{"handleClientRequest"}, []string{"eggplant has a invalid hash"})
+			return
+		}
+		err = egg.Sign(*s.priKey)
+		if err != nil {
+			utils.LogMsg([]string{"handleClientRequest"}, []string{"sign error " + err.Error()})
+			return
+		}
+		egg.NodeId = s.Id
+		egg.FirstSeen = time.Now().Unix()
+		buf := &bytes.Buffer{}
+		err = egg.Encode(core.NewGobEggplantEncoder(buf))
+		if err != nil {
+			utils.LogMsg([]string{"handleClientRequest"}, []string{"encode eggplant error " + err.Error()})
+			return
+		}
+		s.Pool.AddEgg(*egg)
+		eggMes := &EggMes{}
+		eggMes.Egg = buf.Bytes()
+		eggMes.NodeId = s.Id
+		eggMesBuf := &bytes.Buffer{}
+		err = eggMes.Encode(NewGobEggMesEncoder(eggMesBuf))
+		if err != nil {
+			utils.LogMsg([]string{"handleClientRequest"}, []string{"encode eggMes error " + err.Error()})
+			return
+		}
+		rpc := RPC{}
+		rpc.ContentType = cEgg
+		rpc.Payload = eggMesBuf.Bytes()
+		s.Broadcast(rpc)
+	case "Search":
+		id, err := strconv.Atoi(string(req.Content))
+		if err != nil {
+			utils.LogMsg([]string{"handleClientRequest"}, []string{"id format error " + err.Error()})
+			return
+		}
+		for _, block := range s.Chain.Chains {
+			for _, egg := range block.Eggplants {
+				if egg.EggplantId == id {
+					reqMeta, err := json.Marshal(&egg.MetaData)
+					if err != nil {
+						utils.LogMsg([]string{"handleClientRequest"}, []string{"encode matedata failed err = " + err.Error()})
+						return
+					}
+					http.Post(req.RespAddr, "application/json", bytes.NewReader(reqMeta))
+					return
+				}
+			}
+		}
+	default:
+		fmt.Println("Invalid request")
 	}
-	s.Pool.AddEgg(*egg)
-	eggMes := &EggMes{}
-	eggMes.Egg = buf.Bytes()
-	eggMes.NodeId = s.Id
-	eggMesBuf := &bytes.Buffer{}
-	err = eggMes.Encode(NewGobEggMesEncoder(eggMesBuf))
-	if err != nil {
-		utils.LogMsg([]string{"handleClientRequest"}, []string{"encode eggMes error " + err.Error()})
-		return
-	}
-	rpc := RPC{}
-	rpc.ContentType = cEgg
-	rpc.Payload = eggMesBuf.Bytes()
-	s.Broadcast(rpc)
 
 }
 
@@ -432,7 +417,6 @@ func (s *NodeServer) handleCommit(payload []byte) {
 		return
 	}
 	cData := CommitData(c.Digest, c.Nonce)
-	fmt.Printf("commitData = %s", hex.EncodeToString(cData))
 	sig, err := crypto.ByteToSignature(c.Sign)
 
 	if !sig.Verify(cNode.PubKey, cData) {
@@ -453,6 +437,8 @@ func (s *NodeServer) handleCommit(payload []byte) {
 			utils.LogError([]string{"handleCommit"}, []string{"decode block failed err=" + err.Error()})
 			return
 		}
+		fmt.Printf("block = %+v\n", *block.Header)
+		fmt.Println(s.Chain.Chains)
 		err = s.Chain.AddBlock(&block)
 		if err != nil {
 			utils.LogMsg([]string{"handleCommit"}, []string{"block is invalid err= " + err.Error()})
@@ -460,21 +446,9 @@ func (s *NodeServer) handleCommit(payload []byte) {
 		}
 		utils.LogMsg([]string{"handleCommit"}, []string{""})
 		utils.LogMsg([]string{"handleCommit"}, []string{"add block successfully height =" + strconv.Itoa(int(block.Height)) + " hash = " + block.DataHash.String()})
-		r := new(Reply)
-		r.NodeId = s.Id
-		r.Content = "add block successfully height =" + strconv.Itoa(int(block.Height)) + " hash = " + block.DataHash.String()
-		rByte, err := json.Marshal(&r)
-		if err != nil {
-			utils.LogMsg([]string{"handleCommit"}, []string{"reply encode error err = " + err.Error()})
-			return
+		if s.Chain.GetLeader() == s.Id {
+			go s.CreateBlock()
 		}
-		rpc := RPC{}
-		rpc.ContentType = cReply
-		rpc.Payload = rByte
-		// s.SendMessage(rpc, message.Addr)
-		// default:
-		// 	fmt.Println("好的")
-		// }
 
 	}
 

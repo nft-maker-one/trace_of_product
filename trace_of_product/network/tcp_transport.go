@@ -2,9 +2,11 @@ package network
 
 import (
 	"agricultural_meta/utils"
+	"bufio"
 	"fmt"
 	"io"
 	"net"
+	"strings"
 
 	"github.com/sirupsen/logrus"
 )
@@ -43,5 +45,28 @@ func (p *NodeServer) StartServer() {
 			utils.LogError([]string{"NodeUp"}, []string{err.Error()})
 		}
 		p.handleRequest(data)
+		conn.Close()
 	}
+}
+
+func handleConnection(conn net.Conn) (string, string) {
+	defer conn.Close()
+	reader := bufio.NewReader(conn)
+	request, _ := reader.ReadString('\n')
+	for s, err := reader.ReadString('\n'); err != nil; {
+		fmt.Println(s)
+	}
+	res := strings.Split(request, " ")
+	return res[0], res[1]
+
+}
+
+func parseRequest(request string) (method, path string) {
+
+	parts := strings.Split(request, " ")
+	fmt.Println(parts)
+	if len(parts) >= 2 {
+		return parts[0], parts[1]
+	}
+	return "", ""
 }

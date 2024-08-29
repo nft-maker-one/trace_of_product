@@ -3,6 +3,7 @@ package core
 import (
 	"agricultural_meta/crypto"
 	"agricultural_meta/types"
+	"agricultural_meta/utils"
 	"bytes"
 	"encoding/gob"
 	"fmt"
@@ -10,17 +11,17 @@ import (
 
 // MetaData represents for the sotrage message and identical message of Eggplants
 type MetaData struct {
-	EggplantId      int
-	ProductHeight   int
-	ProductHash     types.Hash
-	TransportHeight int
-	TransportHash   types.Hash
-	ProcessHeight   int
-	ProcessHash     types.Hash
-	StorageHeight   int
-	StorageHash     types.Hash
-	SellHeight      int
-	SellHash        types.Hash
+	EggplantId      int        `json:"eggplant_id"`
+	ProductHeight   int        `json:"product_height"`
+	ProductHash     types.Hash `json:"product_hash"`
+	TransportHeight int        `json:"transport_height"`
+	TransportHash   types.Hash `json:"transport_hash"`
+	ProcessHeight   int        `json:"process_height"`
+	ProcessHash     types.Hash `json:"process_hash"`
+	StorageHeight   int        `json:"storage_height"`
+	StorageHash     types.Hash `json:"storage_hash"`
+	SellHeight      int        `json:"sell_height"`
+	SellHash        types.Hash `json:"sell_hash"`
 }
 
 // Eggplant is maingly consist of 5 part
@@ -104,4 +105,14 @@ func (eg *Eggplant) Decode(dec Decoder[*Eggplant]) error {
 
 func (eg *Eggplant) Encode(enc Encoder[*Eggplant]) error {
 	return enc.Encode(eg)
+}
+
+func (m *MetaData) Encode() ([]byte, error) {
+	gob.Register(types.Hash{})
+	buf := bytes.Buffer{}
+	if err := gob.NewEncoder(&buf).Encode(m); err != nil {
+		utils.LogMsg([]string{"encode"}, []string{"metadata encode error err =" + err.Error()})
+		return nil, err
+	}
+	return buf.Bytes(), nil
 }

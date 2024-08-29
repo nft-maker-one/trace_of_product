@@ -8,6 +8,7 @@ import (
 )
 
 type MessageType byte
+type NetAddr string
 
 const (
 	MessageTypeProduce   MessageType = 0x1
@@ -68,4 +69,10 @@ func (m Message) Hash() types.Hash {
 	}
 	hash := sha256.Sum256(data)
 	return types.Hash(hash)
+}
+
+type ClientRequest struct {
+	Header   string `json:"header"`
+	RespAddr string `json:"resp_addr"`
+	Content  []byte `content:"content"`
 }
