@@ -120,7 +120,7 @@ func (s *NodeServer) handleRequest(data []byte) {
 }
 
 func (s *NodeServer) CreateBlock() {
-	time.Sleep(BlockInterval * 30 * time.Second)
+	time.Sleep(BlockInterval * 20 * time.Second)
 	eggs := []*core.Eggplant{}
 	if s.Pool.fifo.len > s.Pool.Cap {
 		for i := 0; i < s.Pool.Cap; i++ {
@@ -164,17 +164,19 @@ func (s *NodeServer) CreateBlock() {
 	s.SequenceId++
 	utils.LogMsg([]string{"CreateBlock"}, []string{fmt.Sprintf("create new visual graph with sequenceId %d", s.SequenceId)})
 
+	sig, err := s.priKey.Sign(b.Header.Bytes())
+
 	pp := PrePrepare{}
 	pp.RequestMessage = *b
 	pp.SequencId = s.SequenceId
-	pp.Digest = b.Hash(core.BlockHasher{})
-	sig, err := s.priKey.Sign(b.Header.Bytes())
+	pp.Digest = b.GetHash()
+	fmt.Println("RequestMessage.GetHash()")
+	fmt.Println(pp.RequestMessage.GetHash())
 	if err != nil {
 		utils.LogError([]string{"handleClientRequest"}, []string{fmt.Sprintf("sign error %s ", err.Error())})
 		return
 	}
 	pp.Sign = sig.ToByte()
-	b.Hash(core.BlockHasher{})
 	s.MessagePool[b.Hash(core.BlockHasher{})] = *b
 	ppDate, err := json.Marshal(&pp)
 	if err != nil {
@@ -264,7 +266,12 @@ func (s *NodeServer) handleClientRequest(payload []byte) {
 func (s *NodeServer) handlePrePrepare(payload []byte) {
 	pp := &PrePrepare{}
 	err := json.Unmarshal(payload, pp)
+	fmt.Println("prePrepare")
 	fmt.Println(pp)
+	fmt.Println("requestMessage")
+	fmt.Print(pp.RequestMessage)
+	fmt.Println("ppDigest")
+	fmt.Println(pp.Digest)
 	if err != nil {
 		utils.LogError([]string{"handlePrePrepare"}, []string{err.Error()})
 		return
@@ -275,7 +282,7 @@ func (s *NodeServer) handlePrePrepare(payload []byte) {
 	}
 	hash := pp.RequestMessage.Hash(core.BlockHasher{})
 	if hash != pp.Digest {
-		utils.LogError([]string{"handlePrePrepare"}, []string{"digest is not correct"})
+		utils.LogError([]string{"handlePrePrepare"}, []string{fmt.Sprintf("digest is not correct,expect %v, but got %v", hash, pp.Digest)})
 		return
 	}
 	// 获取 leader 节点的公钥
@@ -382,7 +389,7 @@ func (s *NodeServer) handlePrepare(payload []byte) {
 		c := new(Commit)
 		c.Sign = sig.ToByte()
 		c.Digest = p.Digest
-		c.NodeId = s.Node.Id
+		c.NodeId = s.Id
 		c.SequenceId = p.SequencId
 		c.Nonce = nonce
 		rpc := RPC{}
@@ -417,6 +424,8 @@ func (s *NodeServer) handleCommit(payload []byte) {
 		return
 	}
 	cData := CommitData(c.Digest, c.Nonce)
+	fmt.Println("cData")
+	fmt.Println(hex.EncodeToString(cData))
 	sig, err := crypto.ByteToSignature(c.Sign)
 
 	if !sig.Verify(cNode.PubKey, cData) {

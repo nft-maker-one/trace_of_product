@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-const AddPoint = 1
+const AddPoint = 16
 
 type Header struct {
 	Version       int32
@@ -41,10 +41,10 @@ func (h *Header) UpdateScore(bc *Blockchain, eggs []*Eggplant) {
 		if _, ok := newScore[egg.NodeId]; !ok {
 			newScore[egg.NodeId] = prevScore[egg.NodeId] / 2
 		}
-		newScore[egg.EggplantId]++
+		newScore[egg.NodeId] += AddPoint
 	}
-	prevScore[prevHeader.Leader] = 0
-	h.Scores = prevScore
+	newScore[prevHeader.Leader] = 0
+	h.Scores = newScore
 }
 
 func (h *Header) SelectLeader() {

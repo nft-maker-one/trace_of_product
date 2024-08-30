@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #e0f7fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .login-container {
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        .login-container h2 {
+            margin-bottom: 20px;
+            color: #0288d1;
+        }
+        .login-container input[type="text"],
+        .login-container input[type="password"] {
+            width: 80%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .login-container button {
+            width: 80%;
+            padding: 10px;
+            background-color: #0288d1;
+            border: none;
+            border-radius: 4px;
+            color: #fff;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+        .login-container button:hover {
+            background-color: #0277bd;
+        }
+        .register-button {
+            background-color: #4fc3f7;
+        }
+        .register-button:hover {
+            background-color: #03a9f4;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <h2>Login</h2>
+        <input type="text" placeholder="Username" id="username">
+        <input type="password" placeholder="Password" id="password">
+        <button onclick="login()">Login</button>
+        <button class="register-button" onclick="register()">Register</button>
+    </div>
+
+    <script>
+        async function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+        
+            if (!username || !password) {
+                alert('Please enter both username and password');
+                return;
+            }
+        
+            try {
+                const response = await fetch('http://localhost:8081/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        user_name: username,
+                        password: password
+                    }),
+                });
+        
+                const result = await response.json();
+                // console.log(result)
+                // if (result.msg == "login succefully"){
+                //     window.location.href = 'main.html';
+                // } else {
+                //     alert("login failed")
+                // }
+                console.log(result.token)
+              if (result.token!=null) {
+                    console.log("doc");
+                    const token = result.token; 
+                    localStorage.setItem('token', token);
+                    window.location.href = 'main.html';
+                } else {
+                    alert(result.message || 'Login failed');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred. Please try again.');
+            }
+        }        
+
+        function register() {
+            window.location.href = 'register.html';
+        }
+    </script>
+</body>
+</html>

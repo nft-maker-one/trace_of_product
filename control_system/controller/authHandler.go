@@ -20,6 +20,7 @@ type AuthModel struct {
 func (am *AuthModel) Login(ctx *gin.Context) {
 	var user models.User
 	if err := ctx.ShouldBindJSON(&user); err != nil {
+		utils.LogMsg([]string{"Login"}, []string{"decode user failed err = " + err.Error()})
 		ctx.JSON(400, gin.H{
 			"error": "Invalid request Body",
 		})
@@ -52,6 +53,7 @@ func (am *AuthModel) Login(ctx *gin.Context) {
 			"error": "Internal Server error",
 		})
 	}
+	ctx.SetCookie("jwt-token", tokenString, 3600, "/", "example.com", false, true)
 	ctx.JSON(200, gin.H{
 		"token": tokenString,
 	})
@@ -84,6 +86,13 @@ func (am *AuthModel) VerifyMiddleWare(ctx *gin.Context) {
 
 	ctx.Next()
 
+}
+
+func (am *AuthModel) Menu(ctx *gin.Context) {
+	ctx.JSON(http.StatusOK, gin.H{
+		"msg": "login successfully",
+	})
+	return
 }
 
 func NewAuthModel(path string) *AuthModel {
