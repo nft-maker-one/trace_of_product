@@ -114,13 +114,12 @@ func (s *NodeServer) handleRequest(data []byte) {
 		if err != nil {
 			fmt.Printf("%s receive message successfully message:%s", s.Addr, string(data))
 		}
-		fmt.Println("receive message from ")
 	}
 
 }
 
 func (s *NodeServer) CreateBlock() {
-	time.Sleep(BlockInterval * 20 * time.Second)
+	time.Sleep(BlockInterval * 60 * time.Second)
 	eggs := []*core.Eggplant{}
 	if s.Pool.fifo.len > s.Pool.Cap {
 		for i := 0; i < s.Pool.Cap; i++ {
@@ -151,11 +150,17 @@ func (s *NodeServer) CreateBlock() {
 	}
 	h.UpdateScore(s.Chain, eggs)
 	h.SelectLeader()
+	if h.Leader == 0 {
+		user := database.ConsortiumNode{}
+		s.Db.DB.Where("id != ?", s.Id).Limit(1).Find(&user)
+		h.Leader = user.Id
+	}
 	b, err := core.NewBlock(h, eggs)
 	if err != nil {
 		utils.LogMsg([]string{"CreateBlock"}, []string{"create new block failed err = " + err.Error()})
 		return
 	}
+	b.GetHash()
 	err = b.Sign(*s.priKey)
 	if err != nil {
 		utils.LogMsg([]string{"CreateBlock"}, []string{"sign block failed err = " + err.Error()})
@@ -167,11 +172,16 @@ func (s *NodeServer) CreateBlock() {
 	sig, err := s.priKey.Sign(b.Header.Bytes())
 
 	pp := PrePrepare{}
-	pp.RequestMessage = *b
+	pp.RequestMessage = *(b)
 	pp.SequencId = s.SequenceId
 	pp.Digest = b.GetHash()
-	fmt.Println("RequestMessage.GetHash()")
-	fmt.Println(pp.RequestMessage.GetHash())
+	// 1 传输前后 RequestMessage 的哈希是一致的
+	if b.GetHash() != pp.RequestMessage.GetHash() {
+		fmt.Printf("%+v\n", *(b))
+		fmt.Printf("%+v\n", *(b.Header))
+		fmt.Printf("%+v\n", pp.RequestMessage)
+		fmt.Printf("%+v\n", *(pp.RequestMessage.Header))
+	}
 	if err != nil {
 		utils.LogError([]string{"handleClientRequest"}, []string{fmt.Sprintf("sign error %s ", err.Error())})
 		return
@@ -201,7 +211,6 @@ func (s *NodeServer) handleClientRequest(payload []byte) {
 	case "Upload":
 		egg := new(core.Eggplant)
 		egg.Decode(core.NewGobEggplantDecoder(bytes.NewReader(req.Content)))
-		// fmt.Println(egg)
 		if egg.EggplantId <= 0 {
 			utils.LogError([]string{"handleClientRequest"}, []string{"eggplant has a invalid id"})
 			return
@@ -266,12 +275,6 @@ func (s *NodeServer) handleClientRequest(payload []byte) {
 func (s *NodeServer) handlePrePrepare(payload []byte) {
 	pp := &PrePrepare{}
 	err := json.Unmarshal(payload, pp)
-	fmt.Println("prePrepare")
-	fmt.Println(pp)
-	fmt.Println("requestMessage")
-	fmt.Print(pp.RequestMessage)
-	fmt.Println("ppDigest")
-	fmt.Println(pp.Digest)
 	if err != nil {
 		utils.LogError([]string{"handlePrePrepare"}, []string{err.Error()})
 		return
@@ -424,8 +427,6 @@ func (s *NodeServer) handleCommit(payload []byte) {
 		return
 	}
 	cData := CommitData(c.Digest, c.Nonce)
-	fmt.Println("cData")
-	fmt.Println(hex.EncodeToString(cData))
 	sig, err := crypto.ByteToSignature(c.Sign)
 
 	if !sig.Verify(cNode.PubKey, cData) {
@@ -437,25 +438,32 @@ func (s *NodeServer) handleCommit(payload []byte) {
 	tNodeNum := s.Db.GetNum()
 	if cNodeNum > tNodeNum/3*2 && !s.isReply[c.Digest] && s.IsCommitBroadcast[c.Digest] {
 		block := s.MessagePool[c.Digest]
-		// switch message.Header {
-		// case MessageTypeBlock:
-		// block := new(core.Block)
-		// dec := core.NewGobBlockDecode(bytes.NewReader(message.Data))
-		// err := dec.Decode(block)
 		if err != nil {
 			utils.LogError([]string{"handleCommit"}, []string{"decode block failed err=" + err.Error()})
 			return
 		}
-		fmt.Printf("block = %+v\n", *block.Header)
-		fmt.Println(s.Chain.Chains)
 		err = s.Chain.AddBlock(&block)
 		if err != nil {
 			utils.LogMsg([]string{"handleCommit"}, []string{"block is invalid err= " + err.Error()})
 			return
 		}
+		for _, egg := range block.Eggplants {
+			s.Pool.DeleteEggByHash(egg.Hash)
+		}
 		utils.LogMsg([]string{"handleCommit"}, []string{""})
 		utils.LogMsg([]string{"handleCommit"}, []string{"add block successfully height =" + strconv.Itoa(int(block.Height)) + " hash = " + block.DataHash.String()})
 		if s.Chain.GetLeader() == s.Id {
+			rec := make(map[int]int)
+			for _, egg := range block.Eggplants {
+				rec[egg.NodeId]++
+			}
+			for k, v := range rec {
+				err := s.Db.AddScore(k, v)
+				if err != nil {
+					utils.LogMsg([]string{"handleCommit"}, []string{"update verify time failed err = %v" + err.Error()})
+				}
+			}
+			fmt.Println(rec)
 			go s.CreateBlock()
 		}
 
@@ -536,8 +544,7 @@ func (s *NodeServer) SendMessageToNode(rpc RPC, id int) error {
 	}
 	for _, node := range NodeTables {
 		if node.Id == id {
-			tcpDial(data, node.Addr)
-			return nil
+			return tcpDial(data, node.Addr)
 		}
 	}
 	return fmt.Errorf("the node[" + strconv.Itoa(id) + "] is not storaged")
@@ -548,8 +555,7 @@ func (s *NodeServer) SendMessage(rpc RPC, addr string) error {
 	if err != nil {
 		return fmt.Errorf("rpc marshal failed err = " + err.Error())
 	}
-	tcpDial(data, addr)
-	return nil
+	return tcpDial(data, addr)
 }
 
 func (s *NodeServer) UpdateNodeTable() {

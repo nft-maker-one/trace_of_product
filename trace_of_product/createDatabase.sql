@@ -7,10 +7,11 @@ DROP TABLE IF EXISTS consortium_nodes;
 
 SELECT * FROM consortium_nodes;
 CREATE TABLE consortium_nodes (
-    id BIGINT,
+    id BIGINT PRIMARY KEY UNIQUE,
     addr VARCHAR(40),
     pub_key BLOB,
-    create_time BIGINT
+    create_time BIGINT, 
+    verify_time INT
 );
 DROP TABLE IF EXISTS users;
 SELECT * FROM users;

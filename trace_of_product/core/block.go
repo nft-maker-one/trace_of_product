@@ -23,8 +23,6 @@ type Header struct {
 	Leader        int
 }
 
-// Datahash 是记录对区块中茄子信息的哈希
-// hash 是整个区块信息的哈希
 type Block struct {
 	*Header
 	Eggplants []*Eggplant
@@ -84,6 +82,8 @@ func (b *Block) Verify() error {
 	}
 
 	if !sig.Verify(b.Validator, b.Header.Bytes()) {
+		fmt.Println("-------------------")
+		fmt.Println(b.Header.Bytes())
 		return fmt.Errorf("block has invalid validator")
 	}
 	dataHash, err := CalculateDataHash(b.Eggplants)

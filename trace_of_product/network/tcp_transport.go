@@ -11,18 +11,21 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func tcpDial(data []byte, addr string) {
+func tcpDial(data []byte, addr string) error {
 	conn, err := net.Dial("tcp", addr)
 	if err != nil {
 		utils.LogError([]string{"tcpDial"}, []string{fmt.Sprintf("failed to connect to %s", addr)})
 		logrus.Errorln(err.Error())
+		return err
 	}
 	_, err = conn.Write(data)
 	if err != nil {
 		utils.LogError([]string{"tcpDial"}, []string{fmt.Sprintf("failed to write data to %s", addr)})
 		logrus.Errorln(err.Error())
+		return err
 	}
 	conn.Close()
+	return nil
 }
 
 func (p *NodeServer) StartServer() {
@@ -59,14 +62,4 @@ func handleConnection(conn net.Conn) (string, string) {
 	res := strings.Split(request, " ")
 	return res[0], res[1]
 
-}
-
-func parseRequest(request string) (method, path string) {
-
-	parts := strings.Split(request, " ")
-	fmt.Println(parts)
-	if len(parts) >= 2 {
-		return parts[0], parts[1]
-	}
-	return "", ""
 }

@@ -21,6 +21,7 @@ type ConsortiumNode struct {
 	Addr       string `gorm:"string"`
 	PubKey     []byte `gorm:"pubkey"`
 	CreateTime int64  `gorm:"time"`
+	VerifyTime int    `gorm:"verify_time"`
 }
 
 func initDataBase(dsn string) *gorm.DB {
@@ -66,5 +67,12 @@ func (nd *NodeDb) DeleteNode(id int) error {
 	} else {
 		logrus.Errorln(res.Error.Error())
 	}
+	return res.Error
+}
+
+func (nd *NodeDb) AddScore(id int, num int) error {
+	node := ConsortiumNode{}
+	nd.DB.First(&node, id)
+	res := nd.DB.Exec(fmt.Sprintf("update consortium_nodes set verify_time = verify_time+%d where id = %d ", num, id))
 	return res.Error
 }
