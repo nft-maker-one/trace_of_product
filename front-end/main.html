@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Main Page</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #e0f7fa;
+        }
+        .navbar {
+            background-color: #0288d1;
+            padding: 10px;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            color: white;
+        }
+        .navbar a {
+            color: white;
+            text-decoration: none;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .navbar a:hover {
+            background-color: #0277bd;
+        }
+        .content {
+            padding: 20px;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .input-group {
+            margin-bottom: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        .input-group label {
+            margin-bottom: 5px;
+        }
+        .input-group input, .input-group button {
+            padding: 10px;
+            width: 250px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        .input-group button {
+            margin-top: 10px;
+            background-color: #0288d1;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        .input-group button:hover {
+            background-color: #0277bd;
+        }
+        .result-list, .upload-result {
+            margin-top: 20px;
+            color: #0288d1;
+        }
+        .user-info {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .user-info img {
+            border-radius: 50%;
+            margin-right: 15px;
+            width: 100px;
+            height: 100px;
+        }
+        .login-time {
+            font-size: 14px;
+            color: #555;
+        }
+
+        .custom-table {
+            font-size: 14px;
+            color: #333;
+            border-collapse: collapse;
+        }
+        .custom-table th {
+            background-color: #f5f5f5;
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        .custom-table td {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+        }
+
+/* 数据上传页面 */
+        /* 节点展示页面 */
+        .node-list {
+            margin-top: 20px;
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+        }
+        .node-list ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        .node-list li {
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            display: table;
+            width: 99%;
+        }
+        
+        .node-list li span {
+            display: table-cell;
+            padding: 5px;
+            text-align: center;
+            width: 130px;
+        }
+        .span-title {
+            background: linear-gradient(to bottom, #ffffff, #e6e6e6);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            font-weight: bold;
+            font-size: 18px;
+            padding: 5px 10px;
+            height: 25px;
+            
+            border: 1px solid #000000;
+        }
+
+        /* 数据上传页面布局 */
+        .data-upload-display {
+            float: left;
+            width: 40%;
+            padding: 10px;
+        }
+        .search-node {
+            overflow: hidden;
+            padding: 10px;
+        }
+        .search-node button {
+            font-size: 16px;
+            color: white;
+            margin-left: 350px;
+            width: 130px;
+            height: 50px;
+            border: #121111 solid 0.8px;
+            border-radius: 4px;
+            background-color: #0288d1;
+
+        }
+        .search-node button:hover{
+            background-color: #0277bd;
+        }
+
+        /* 下拉列表样式 */
+        select {
+            width: 140px;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <a href="#personal-center">个人信息</a>
+        <a href="#data-upload">数据上传</a>
+        <a href="#data-query">数据查询</a>
+        <a href="#statistics-distribution">敬请期待</a>
+    </div>
+
+    <div class="content">
+        <!-- 个人信息 Tab -->
+        <div id="personal-center" class="tab-content active">
+            <h2>用户信息</h2>
+            <div class="user-info">
+                <img src="./sources/imgs/profile.jpg" alt="User Avatar">
+                <span>欢迎 <span id="username-display">John Doe</span>!</span><br>
+                <div class="login-time">(登录时间: <span id="login-time"></span>)</div>
+            </div>
+        </div>
+
+        <!-- 上传 Tab -->
+        <div id="data-upload" class="tab-content">
+            <div class="data-upload-display">
+                <h2>产品数据上传</h2>
+                <div class="input-group">
+                    <label for="upload-eggplant-id">eggplantID:</label>
+                    <input type="text" id="upload-eggplant-id">
+                </div>
+                <div class="input-group">
+                    <label for="upload-product-height">产品高度:</label>
+                    <input type="text" id="upload-product-height">
+                </div>
+                <div class="input-group">
+                    <label for="upload-product-hash">产品哈希:</label>
+                    <input type="text" id="upload-product-hash">
+                </div>
+                <div class="input-group">
+                    <label for="upload-transport-height">运输高度:</label>
+                    <input type="text" id="upload-transport-height">
+                </div>
+                <div class="input-group">
+                    <label for="upload-transport-hash">运输哈希:</label>
+                    <input type="text" id="upload-transport-hash">
+                </div>
+                <div class="input-group">
+                    <label for="upload-process-height">加工高度:</label>
+                    <input type="text" id="upload-process-height">
+                </div>
+                <div class="input-group">
+                    <label for="upload-process-hash">加工哈希:</label>
+                    <input type="text" id="upload-process-hash">
+                </div>
+                <div class="input-group">
+                    <label for="upload-storage-height">存储高度:</label>
+                    <input type="text" id="upload-storage-height">
+                </div>
+                <div class="input-group">
+                    <label for="upload-storage-hash">存储哈希:</label>
+                    <input type="text" id="upload-storage-hash">
+                </div>
+                <div class="input-group">
+                    <label for="upload-sell-height">销售高度:</label>
+                    <input type="text" id="upload-sell-height">
+                </div>
+                <div class="input-group">
+                    <label for="upload-sell-hash">销售哈希:</label>
+                    <input type="text" id="upload-sell-hash">
+                </div>
+                <div>
+                    <label>选择上传节点</label>
+                    <select id="select-node">
+                    </select>
+                </div>
+                <div class="input-group">
+                    <button onclick="uploadData()">上传</button>
+                </div>
+                <div id="upload-result"></div>
+            </div>
+            <div class="search-node">
+                <h2>在线节点状态</h2>
+                <div class="node-list" id="node-list">
+                    <p>点击下方查询在线节点</p>
+                </div>
+                <button type="button" class="serach-node-button" id="serach-node-button">查看联盟链节点</button>
+            </div>
+
+        </div>
+
+
+        <!-- 查询 Tab -->
+        <div id="data-query" class="tab-content">
+            <h2>产品信息查询</h2>
+            <div class="input-group">
+                <label for="query-id">eggplantID:</label>
+                <input type="text" id="query-id">
+            </div>
+            <div>
+                <label>选择查询节点</label>
+                <select id="select-node1">
+                </select>
+            </div>
+            <div class="input-group">
+                <button onclick="queryData()">查询</button>
+            </div>
+            <div class="result-list" id="result-list"></div>
+        </div>
+
+        <!-- 查询在线节点 Tab -->
+        <div id="statistics-distribution" class="tab-content">
+            <h2>查询在线节点</h2>
+            <div class="node-list" id="node-list1">
+                <p>点击下方按钮查看节点信息</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 设置加载时的处理
+        window.addEventListener("load",function(ev) {
+            fetch("http://localhost:8081/menu",{
+                method:"GET",
+                headers:{
+                    Authorization:localStorage.getItem("token")
+                }
+        }).then(response => response.json())
+        .then((data) => {
+            if (data.status=="ok"){
+                alert(data.msg)
+            } else {
+                alert(data.msg)
+                window.location.href="index.html"
+            }
+        })
+        .catch((error)=>{
+                    alert("登陆失败")
+                    window.location.href="index.html"
+         })
+            
+        })
+        document.getElementById('username-display').textContent = 'John Doe'; // Replace with dynamic username
+        document.getElementById('login-time').textContent = new Date().toLocaleString(); // Show current time as login time
+        
+        // 查询节点业务逻辑
+        let nodes = {}
+        const search_node_buttom = document.getElementById("serach-node-button");
+        const select_node = document.getElementById("select-node");
+        const select_node1 = document.getElementById("select-node1");
+        let search_node_status = false;
+        search_node_buttom.addEventListener("click",()=>{
+            search_node_status = !search_node_status;
+            if (search_node_status) {
+                fetch('http://localhost:8081/nodes',{
+                method:"GET",
+                headers:{
+                    "Authorization":localStorage.getItem('token'),
+                }
+                })
+                .then(response => response.json())
+                .then((data) => {
+                    if (data.status) {
+                        alert(data.msg)
+                    } else {
+                        console.log(data)
+                        const nodeList = document.getElementById("node-list")
+                        nodeList.innerHTML = '<p>加载中...</p>'
+                        let innerHtml = "<ul>"
+                        select_node.innerHTML = "<option>暂无数据</option>"
+                        select_node1.innerHTML = "<option>暂无数据</option>"
+                        let selectHtml = ""
+                        innerHtml += '<li> <span class="span-title">Node ID</span> <span class="span-title">Address</span><span class="span-title">Register Time</span><span class="span-title">Verify Message Num</span></li>'
+                        nodes = {}
+                        data.forEach(item => {
+                            innerHtml += `<li><span>${item.id}</span><span>${item.addr}</span><span>${item.create_time}</span><span>${item.verify_time}</span></li>`
+                            nodes[item.id]=item.addr
+                            selectHtml += `<option>${item.id}</option>`
+                        })
+                        innerHtml += "</ul>";
+                        nodeList.innerHTML = innerHtml;
+                        select_node.innerHTML = selectHtml;
+                        select_node1.innerHTML = selectHtml;
+                    }
+                        
+                }).catch(error => {
+                    console.error('Error fetching nodes:', error);
+                    document.getElementById('node-list').innerHTML = '<p>Error fetching nodes.</p>';
+                })
+                search_node_buttom.textContent = "折叠列表"
+            } else {
+                document.getElementById('node-list').innerHTML = '<p>点击下方按钮查看节点信息</p>'
+                search_node_buttom.textContent = "查看联盟链节点"
+            }
+            
+          })
+        
+    // 上传数据业务代码
+
+        // 查询农作物信息
+        function queryData() {
+            const queryId = document.getElementById('query-id').value;
+            const resultList = document.getElementById('result-list');
+            const node_address = nodes[select_node.value];
+            if (queryId=="") {
+                alert("请输入查询农作物id")
+            } else if (node_address=="") {
+                alert("请指定查询节点")
+            } else {
+                fetch(`http://localhost:8081/message?id=${queryId}&node=${node_address}`,{
+                    method:"GET",
+                    headers:{
+                        "Authorization":localStorage.getItem("token"),
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        data = JSON.parse(data.msg);
+                        if (data) {
+                            resultList.innerHTML = `
+                                <p>Product Height: ${data.product_height}</p>
+                                <p>Product Hash: ${bytesToHex(data.product_hash)}</p>
+                                <p>Transport Height: ${data.transport_height}</p>
+                                <p>Transport Hash: ${bytesToHex(data.transport_hash)}</p>
+                                <p>Process Height: ${data.process_height}</p>
+                                <p>Process Hash: ${bytesToHex(data.process_hash)}</p>
+                                <p>Storage Height: ${data.storage_height}</p>
+                                <p>Storage Hash: ${bytesToHex(data.storage_hash)}</p>
+                                <p>Sell Height: ${data.sell_height}</p>
+                                <p>Sell Hash: ${bytesToHex(data.sell_hash)}</p>
+                            `;
+                        } else {
+                            resultList.innerHTML = '<p>No results found.</p>';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching data:', error);
+                        resultList.innerHTML = '<p>Error fetching data.</p>';
+                    });
+             }
+        }
+
+
+
+        
+        function bytesToHex(bytes) {
+        let hex = '';
+        for (let i = 0; i < bytes.length; i++) {
+            let hexValue = bytes[i].toString(16);
+            if (hexValue.length === 1) {
+            hex += '0';
+            }
+            hex += hexValue;
+        }
+        return hex;
+        }
+
+        // 上传数据
+        function uploadData() {
+            const eggplantId = parseInt(document.getElementById('upload-eggplant-id').value);
+            const productHeight = parseInt(document.getElementById('upload-product-height').value);
+            const productHash = document.getElementById('upload-product-hash').value;
+            const transportHeight = parseInt(document.getElementById('upload-transport-height').value);
+            const transportHash = document.getElementById('upload-transport-hash').value;
+            const processHeight = parseInt(document.getElementById('upload-process-height').value);
+            const processHash = document.getElementById('upload-process-hash').value;
+            const storageHeight = parseInt(document.getElementById('upload-storage-height').value);
+            const storageHash = document.getElementById('upload-storage-hash').value;
+            const sellHeight = parseInt(document.getElementById('upload-sell-height').value);
+            const sellHash = document.getElementById('upload-sell-hash').value;
+            if (eggplantId  && transportHash &&  processHash  && storageHash && sellHash&&select_node.value)  {
+                fetch('http://localhost:8081/upload', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization':localStorage.getItem('token'),
+                    },
+                    body: JSON.stringify({
+                        eggplant_id: eggplantId,
+                        product_height: productHeight,
+                        product_hash: productHash,
+                        transport_height: transportHeight,
+                        transport_hash: transportHash,
+                        process_height: processHeight,
+                        process_hash: processHash,
+                        storage_height: storageHeight,
+                        storage_hash: storageHash,
+                        sell_height: sellHeight,
+                        sell_hash: sellHash,
+                        node_ip:nodes[select_node.value]
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log(data)
+                    if (data.status=="ok"&&data.msg=="上传成功") {
+                        document.getElementById('upload-result').textContent = '上传成功!';
+                    } else if (data.status=="ok"&&data.msg=="连接联盟链节点失败，尝试向其他节点发起请求") {
+                        document.getElementById('upload-result').textContent = "连接联盟链节点失败，尝试向其他节点发起请求"
+                    } else {
+                        alert("上传失败："+data.msg)
+                        document.getElementById('upload-result').textContent = '上传失败: ' + data.msg;
+                    }
+                    
+                })
+                .catch((error) => {
+                    console.log(error.message)
+                    document.getElementById('upload-result').textContent = '上传失败: ' ;
+                });
+            } else {
+                document.getElementById('upload-result').textContent = '请填写所有必填项。';
+            }
+        }
+        
+        
+        document.querySelectorAll('.navbar a').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+                const targetId = this.getAttribute('href').substring(1);
+                document.getElementById(targetId).classList.add('active');
+
+                if (targetId === 'statistics-distribution') {
+                    fetchOnlineNodes();
+                }
+            });
+        });
+
+        
+        function fetchOnlineNodes() {
+            console.log(localStorage.getItem('token'))
+            fetch('http://localhost:8081/nodes',{
+                method:"GET",
+                headers:{
+                    "Authorization":localStorage.getItem('token'),
+                }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    const nodeList = document.getElementById('node-list');
+                    let nodeListHtml = '<ul>';
+                    nodeListHtml += '<li> <span class="span-title">Node ID</span> <span class="span-title">Address</span></li>'
+                    for (const [id, address] of Object.entries(data)) {
+                        nodeListHtml += `<li><span> ${id}</span><span> ${address}</span></li>`;
+                    }
+                    nodeListHtml += '</ul>';
+                    console.log(nodeListHtml)
+                    nodeList.innerHTML = nodeListHtml;
+                })
+                .catch(error => {
+                    console.error('Error fetching nodes:', error);
+                    document.getElementById('node-list').innerHTML = '<p>Error fetching nodes.</p>';
+                });
+        }
+
+        
+        function pollOnlineNodes() {
+            fetchOnlineNodes();
+            setInterval(fetchOnlineNodes, 5000); // Poll every 5 seconds
+        }
+
+        
+        document.getElementById('statistics-distribution').addEventListener('click', pollOnlineNodes);
+    </script>
+</body>
+</html>

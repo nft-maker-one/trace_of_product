@@ -11,10 +11,11 @@ type User struct {
 }
 
 type ConsortiumNode struct {
-	Id         int    `gorm:"id"`
-	Addr       string `gorm:"addr"`
-	PubKey     []byte `gorm:"pubkey"`
-	CreateTime int64  `gorm:"time"`
+	Id         int    `gorm:"id" json:"id"`
+	Addr       string `gorm:"addr" json:"addr"`
+	PubKey     []byte `gorm:"pubkey" json:"pub_key"`
+	CreateTime int64  `gorm:"time" json:"create_time"`
+	VerifyTime int    `gorm:"verify_time" json:"verify_time"`
 }
 
 type Hash [32]uint8
@@ -89,7 +90,7 @@ func (r ReqMetaData) ToMetaData() MetaData {
 	res.TransportHash, _ = BytesToHash(tHash)
 	res.TransportHeight = r.TransportHeight
 	res.ProcessHash, _ = BytesToHash(pcHash)
-	res.ProductHeight = r.ProcessHeight
+	res.ProcessHeight = r.ProcessHeight
 	res.StorageHash, _ = BytesToHash(sHash)
 	res.StorageHeight = r.StorageHeight
 	res.SellHash, _ = BytesToHash(seHash)
@@ -107,4 +108,8 @@ func BytesToHash(data []byte) (Hash, error) {
 		hash[i] = data[i]
 	}
 	return hash, nil
+}
+
+func (m MetaData) Verify() bool {
+	return true
 }

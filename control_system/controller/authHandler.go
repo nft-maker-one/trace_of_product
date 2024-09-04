@@ -64,7 +64,8 @@ func (am *AuthModel) VerifyMiddleWare(ctx *gin.Context) {
 	tokenString := ctx.GetHeader("Authorization")
 	if tokenString == "" {
 		ctx.JSON(http.StatusUnauthorized, gin.H{
-			"error": "login required",
+			"status": "error",
+			"msg":    "请完成登陆",
 		})
 		ctx.Abort()
 		return
@@ -78,7 +79,8 @@ func (am *AuthModel) VerifyMiddleWare(ctx *gin.Context) {
 			utils.LogMsg([]string{"VerifyMiddleWare"}, []string{"verify jwt failed err = " + err.Error()})
 		}
 		ctx.JSON(http.StatusUnauthorized, gin.H{
-			"error": "Invalid tolen",
+			"status": "error",
+			"msg":    "请更新登陆token",
 		})
 		ctx.Abort()
 		return
@@ -90,9 +92,9 @@ func (am *AuthModel) VerifyMiddleWare(ctx *gin.Context) {
 
 func (am *AuthModel) Menu(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{
-		"msg": "login successfully",
+		"status": "ok",
+		"msg":    "欢迎登陆农产追溯通客户端",
 	})
-	return
 }
 
 func NewAuthModel(path string) *AuthModel {
