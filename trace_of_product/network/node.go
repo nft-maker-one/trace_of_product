@@ -22,7 +22,7 @@ import (
 
 var NodeTables = []Node{}
 
-const BlockInterval = 1
+const BlockInterval = 3
 
 // time.Second 只可以与常数连乘
 
