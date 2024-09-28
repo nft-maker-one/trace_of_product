@@ -4,6 +4,7 @@ import (
 	"agricultural_meta/crypto"
 	"agricultural_meta/types"
 	"bytes"
+	"fmt"
 	"math"
 	"math/rand"
 	"testing"
@@ -48,28 +49,50 @@ func randomEggplantWithSignature() *Eggplant {
 }
 
 func TestEggplantSignAndVerify(t *testing.T) {
-	egg := randomEggpalnt()
-	priKey := crypto.GeneratePrivateKey()
-	assert.Nil(t, egg.Sign(priKey))
-	assert.Nil(t, egg.Verify())
+	test_data := ""
+	for i := 0; i < 20; i++ {
+		egg := randomEggpalnt()
+		test_data += fmt.Sprintf("农产品 %d\n%+v\n", i+1, egg)
+		priKey := crypto.GeneratePrivateKey()
+		assert.Nil(t, egg.Sign(priKey))
+		assert.Nil(t, egg.Verify())
+	}
+	fmt.Println(test_data)
+
 }
 
 func TestEggplantHash(t *testing.T) {
-	egg := randomEggpalnt()
-	egg.SetHash(EggplantHasher{})
-	assert.False(t, egg.Hash.IsZero())
-	logrus.Info("egg:", egg.Hash)
+	test_data := ""
+	for i := 0; i < 20; i++ {
+		egg := randomEggpalnt()
+		test_data += fmt.Sprintf("农产品 %d\n%+v\n", i+1, egg)
+		egg.SetHash(EggplantHasher{})
+		assert.False(t, egg.Hash.IsZero())
+		fmt.Printf("Eggplant %d hash %v\n", i+1, egg.Hash)
+	}
+	fmt.Println(test_data)
+
 }
 
 func TestEggplantEncodeDecode(t *testing.T) {
-	egg := randomEggpalnt()
-	egg.SetHash(EggplantHasher{})
-	priKey := crypto.GeneratePrivateKey()
-	assert.Nil(t, egg.Sign(priKey))
-	buf := &bytes.Buffer{}
-	assert.Nil(t, NewGobEggplantEncoder(buf).Encode(egg))
-	newEgg := &Eggplant{}
-	assert.Nil(t, NewGobEggplantDecoder(buf).Decode(newEgg))
-	assert.Equal(t, *egg, *newEgg)
+	test_data := ""
+	test_res := ""
+	for i := 0; i < 20; i++ {
+		egg := randomEggpalnt()
+		egg.SetHash(EggplantHasher{})
+		priKey := crypto.GeneratePrivateKey()
+		assert.Nil(t, egg.Sign(priKey))
+		buf := &bytes.Buffer{}
+		test_data += fmt.Sprintf("农产品 %d (编码前)\n%+v\n", i+1, egg)
+		test_res += fmt.Sprintf("农产品 %d (编码前)\n%+v\n", i+1, egg)
+		assert.Nil(t, NewGobEggplantEncoder(buf).Encode(egg))
+		test_res += fmt.Sprintf("农产品 %d (编码结果)\n%+v\n", i+1, buf.Bytes())
+		newEgg := &Eggplant{}
+		assert.Nil(t, NewGobEggplantDecoder(buf).Decode(newEgg))
+		test_res += fmt.Sprintf("农产品 %d (解码结果)\n%+v\n", i+1, egg)
+		assert.Equal(t, *egg, *newEgg)
+	}
+	fmt.Println(test_data)
+	fmt.Println(test_res)
 
 }

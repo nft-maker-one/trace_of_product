@@ -80,23 +80,22 @@ func (sig *Signature) Verify(pubKey []byte, data []byte) bool {
 func (sig *Signature) ToByte() []byte {
 	rBytes := sig.R.Bytes()
 	sBytes := sig.S.Bytes()
-	bytesLength := (elliptic.P256().Params().BitSize + 7) / 8
-	compressed := make([]byte, 2*bytesLength)
-	copy(compressed[:bytesLength], rBytes)
-	copy(compressed[bytesLength:], sBytes)
+	compressed := make([]byte, 2+len(rBytes)+len(sBytes))
+	compressed[0] = byte(len(rBytes))
+	compressed[1] = byte(len(sBytes))
+	copy(compressed[2:2+len(rBytes)], rBytes)
+	copy(compressed[2+len(rBytes):], sBytes)
 	return compressed
 }
 
 // 签名解码模块
 func ByteToSignature(compressed []byte) (*Signature, error) {
-	if len(compressed)%2 != 0 {
-		return nil, fmt.Errorf("bytes array has a invalid odd length")
+	rLen, sLen := int(compressed[0]), int(compressed[1])
+	if len(compressed) != 2+sLen+rLen {
+		return nil, fmt.Errorf("sig encoded format error")
 	}
-	byteLength := len(compressed) / 2
-	if byteLength != (elliptic.P256().Params().BitSize+7)/8 {
-		return nil, fmt.Errorf("bytes array is not a signature by secp256r1")
-	}
-	r := new(big.Int).SetBytes(compressed[:byteLength])
-	s := new(big.Int).SetBytes(compressed[byteLength:])
+	r, s := big.NewInt(0), big.NewInt(0)
+	r.SetBytes(compressed[2 : 2+rLen])
+	s.SetBytes(compressed[2+rLen:])
 	return &Signature{R: r, S: s}, nil
 }

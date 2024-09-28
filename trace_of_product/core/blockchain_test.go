@@ -23,7 +23,7 @@ func getPrevBlockHash(t *testing.T, bc *Blockchain, height int) types.Hash {
 }
 
 func TestAddBlock(t *testing.T) {
-	bc := newBlockchainWithGenesis(t) //block Height 0 Chains Length 1
+	bc := newBlockchainWithGenesis(t)
 	for i := 1; i <= 1000; i++ {
 		block := randomBlock(t, i, getPrevBlockHash(t, bc, i))
 		priKey := crypto.GeneratePrivateKey()
@@ -63,7 +63,8 @@ func TestGetHeader(t *testing.T) {
 		b := randomBlock(t, i, getPrevBlockHash(t, bc, i)) //
 		priKey := crypto.GeneratePrivateKey()
 		b.Sign(priKey)
-		bc.AddBlock(b)
+		err := bc.AddBlock(b)
+		assert.Nil(t, err)
 		block, err := bc.GetBlock(int(b.Height))
 		fmt.Println(bc.Height())
 		assert.Nil(t, err)

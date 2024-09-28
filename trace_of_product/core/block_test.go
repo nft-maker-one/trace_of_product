@@ -4,10 +4,10 @@ import (
 	"agricultural_meta/crypto"
 	"agricultural_meta/types"
 	"bytes"
+	"fmt"
 	"testing"
 	"time"
 
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -30,28 +30,46 @@ func randomBlock(t *testing.T, height int, prevBlockHash types.Hash) *Block {
 }
 
 func TestHashBlock(t *testing.T) {
-	block := randomBlock(t, 1, types.Hash{})
-	logrus.WithField("block", block).Debugln()
-	hash := block.Hash(BlockHasher{})
-	assert.False(t, hash.IsZero())
-	logrus.WithField("hash", hash).Infoln()
+	test_data := ""
+	res := ""
+	for i := 0; i < 5; i++ {
+		block := randomBlock(t, 1, types.Hash{})
+		hash := block.Hash(BlockHasher{})
+		test_data += fmt.Sprintf("block %d\n%+v\n", i+1, block)
+		res += fmt.Sprintf("hash %d : %v\n", i+1, hash)
+		assert.False(t, hash.IsZero())
+
+	}
+	fmt.Println(test_data)
+	fmt.Println(res)
+
 }
 
 func TestBlockVerify(t *testing.T) {
-	b := randomBlock(t, 0, types.Hash{})
-	priKey := crypto.GeneratePrivateKey()
-	assert.Nil(t, b.Sign(priKey))
-	assert.NotNil(t, b.Signature)
-	assert.Nil(t, b.Verify())
+	test_data := ""
+	for i := 0; i < 5; i++ {
+		b := randomBlock(t, 0, types.Hash{})
+		priKey := crypto.GeneratePrivateKey()
+		assert.Nil(t, b.Sign(priKey))
+		assert.NotNil(t, b.Signature)
+		test_data += fmt.Sprintf("block %d\n%+v\n", i+1, b)
+		assert.Nil(t, b.Verify())
+	}
+	fmt.Println(test_data)
 }
 
 func TestEncodeBlock(t *testing.T) {
-	b := randomBlock(t, 1, types.Hash{})
-	priKey := crypto.GeneratePrivateKey()
-	b.Sign(priKey)
-	buf := bytes.Buffer{}
-	assert.Nil(t, b.Encode(NewGobBlockEncoder(&buf)))
-	bDecode := new(Block)
-	assert.Nil(t, bDecode.Decode(NewGobBlockDecode(&buf)))
-	assert.Equal(t, b, bDecode)
+	test_data := ""
+	for i := 0; i < 5; i++ {
+		b := randomBlock(t, 1, types.Hash{})
+		priKey := crypto.GeneratePrivateKey()
+		b.Sign(priKey)
+		test_data += fmt.Sprintf("block %d\n%+v\n", i+1, b)
+		buf := bytes.Buffer{}
+		assert.Nil(t, b.Encode(NewGobBlockEncoder(&buf)))
+		bDecode := new(Block)
+		assert.Nil(t, bDecode.Decode(NewGobBlockDecode(&buf)))
+		assert.Equal(t, b, bDecode)
+	}
+	fmt.Println(test_data)
 }

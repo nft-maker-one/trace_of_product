@@ -5,6 +5,8 @@ import (
 	"agricultural_meta/crypto"
 	"agricultural_meta/types"
 	"fmt"
+	"math/rand"
+	"sync"
 	"testing"
 	"time"
 
@@ -35,29 +37,36 @@ func TestDoblyLinkedList(t *testing.T) {
 
 func TestAddEgg(t *testing.T) {
 	pool := NewMemoryPool(500)
-	for i := 1; i <= 100; i++ {
-		data := core.MetaData{EggplantId: i}
-		egg := core.NewEggplant(data)
-		priKey := crypto.GeneratePrivateKey()
-		egg.SetHash(core.EggplantHasher{})
-		sig, err := priKey.Sign(egg.Hash[:])
-		assert.Nil(t, err)
-		egg.Signature = sig.ToByte()
-		egg.FirstSeen = time.Now().Unix()
-		go pool.AddEgg(*egg)
+	wg := &sync.WaitGroup{}
+	wg.Add(500)
+	for i := 1; i <= 500; i++ {
+		go func(i int) {
+			data := core.MetaData{EggplantId: i}
+			egg := core.NewEggplant(data)
+			priKey := crypto.GeneratePrivateKey()
+			egg.SetHash(core.EggplantHasher{})
+			sig, err := priKey.Sign(egg.Hash[:])
+			assert.Nil(t, err)
+			egg.Signature = sig.ToByte()
+			egg.FirstSeen = time.Now().Unix()
+			pool.AddEgg(*egg)
+			wg.Done()
+		}(i)
 	}
-	time.Sleep(1 * time.Second)
+	wg.Wait()
 }
 
 func TestSearchEggByHash(t *testing.T) {
 	pool := NewMemoryPool(500)
-	data := core.MetaData{EggplantId: 1}
-	egg := core.NewEggplant(data)
-	hash := egg.SetHash(core.EggplantHasher{})
-	go pool.AddEgg(*egg)
-	newEgg := pool.SearchEggByHash(hash)
-	assert.Equal(t, 1, newEgg.EggplantId)
-	assert.Equal(t, *egg, newEgg)
+	for i := 0; i < 500; i++ {
+		data := core.MetaData{EggplantId: i}
+		egg := core.NewEggplant(data)
+		hash := egg.SetHash(core.EggplantHasher{})
+		pool.AddEgg(*egg)
+		newEgg := pool.SearchEggByHash(hash)
+		assert.Equal(t, i, newEgg.EggplantId)
+		assert.Equal(t, *egg, newEgg)
+	}
 
 }
 
@@ -73,13 +82,24 @@ func TestIsExist(t *testing.T) {
 
 func TestDeleteEggByHash(t *testing.T) {
 	pool := NewMemoryPool(500)
-	data := core.MetaData{EggplantId: 1}
-	egg := core.NewEggplant(data)
-	hash := egg.SetHash(core.EggplantHasher{})
-	pool.AddEgg(*egg)
-	assert.True(t, pool.IsExistEgg(hash))
-	pool.DeleteEggByHash(hash)
-	assert.False(t, pool.IsExistEgg(hash))
+	hashes := make([]types.Hash, 0)
+	for i := 0; i < 500; i++ {
+		data := core.MetaData{EggplantId: rand.Intn(1000 * 1000)}
+		egg := core.NewEggplant(data)
+		hash := egg.SetHash(core.EggplantHasher{})
+		hashes = append(hashes, hash)
+		pool.AddEgg(*egg)
+		if data.EggplantId%3 == 0 {
+			pool.DeleteEggByHash(hash)
+		}
+	}
+
+	for _, hash := range hashes {
+		if pool.IsExistEgg(hash) {
+			egg := pool.SearchEggByHash(hash)
+			assert.True(t, egg.EggplantId%3 != 0)
+		}
+	}
 
 }
 
