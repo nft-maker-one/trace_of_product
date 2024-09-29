@@ -144,3 +144,41 @@ In this project, the arkwork-rs algorithm library is used to implement a plookup
 #### Compilation of Encryption Process
 
 ![alt text](image-9.png)
+
+## Software Flow Chart
+![alt text](whiteboard_exported_image.png)
+
+## Containerized Deployment of the Program
+1. intialize the environment variables  
+```shell
+./init.sh
+```
+2. Enter the controller_system folder and package the Docker image.
+```shell
+docker build -t control_system .
+```
+3. Use docker - compose to start the MySQL, Redis databases and the back - end program.
+```shell
+docker-compose up -d
+```
+4. Enter trace_of_product to package the node image file.
+```shell
+docker build -t node .
+```
+5. Start the consortium blockchain nodes.
+```shell
+docker run --name=node1 --network trace_of_product -e IP=node1 -e NODE_NAME=node1 -id node
+```
+If you just want to build a simple regional consortium blockchain network on your own, this project provides a four - node consortium blockchain network startup script. You can perform the following operations to start it.
+```shell
+./quick-start.sh
+```
+6. Enter front-end and package the front-end image.
+```shell
+docker build -t front-end .
+```
+
+7. Start the front - end container.
+```shell
+docker run --name = menu -p 8880:80 --network trace_of_product -id front-end
+```
