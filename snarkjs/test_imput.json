@@ -1,0 +1,13 @@
+{
+    "EggplantId": "123456",
+    "ProductHeight": "100",
+    "ProductHash": ["1", "2", "3", "4"],
+    "TransportHeight": "200",
+    "TransportHash": ["5", "6", "7", "8"],
+    "ProcessHeight": "300",
+    "ProcessHash": ["9", "10", "11", "12"],
+    "StorageHeight": "400",
+    "StorageHash": ["13", "14", "15", "16"],
+    "SellHeight": "500",
+    "SellHash": ["17", "18", "19", "20"]
+}
