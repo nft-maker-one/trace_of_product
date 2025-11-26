@@ -104,6 +104,6 @@ func NewAuthModel(path string) *AuthModel {
 	}
 	am := &AuthModel{}
 	am.SecretKey = cfg.Key
-	am.myDb = database.NewMyDb(cfg.Mysql.Dsn)
+	am.myDb = database.NewMyDb(cfg.Postgresql.Dsn)
 	return am
 }

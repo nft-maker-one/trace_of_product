@@ -19,11 +19,73 @@ func main() {
 	config.AllowMethods = []string{"GET", "POST", "OPTIONS"}
 	config.AllowHeaders = []string{"Content-Type", "Authorization"}
 	engine.Use(cors.New(config))
+
+	// 设置jwt以及登录校验服务
+	// 请求参数
+	// {
+	// 	"user_name": "string",
+	// 	"password": "string"
+	// }
+	// 成功
+	// {
+	// 	"token": "string"
+	// }
+	// 失败
+	// {
+	// 	"error": "string"
+	// }
 	engine.POST("/login", AuthHandler.Login)
+	
+	// 处理节点发送的农产品信息
 	engine.POST("/meta_data", ChainHandler.HandleChainResponse)
+
 	engine.POST("/upload", AuthHandler.VerifyMiddleWare, ChainHandler.UpdateData)
+
+	// 获取节点列表
+	// 请求参数
+	// 无，但需要 JWT Token（Authorization Header）
+	// 成功
+	// [
+	// {
+	// 	"id": 0,                    // 节点ID
+	// 	"addr": "string",            // 节点地址（IP:Port）
+	// 	"pub_key": "[]byte",         // 节点公钥（字节数组）
+	// 	"create_time": 0,            // 创建时间戳
+	// 	"verify_time": 0             // 验证时间
+	//   },
+	//   ...
+	// ]
+	// 失败
+	// {
+	// 	"status": "error",
+	// 	"msg": "获取节点错误：..."
+	//   }
 	engine.GET("/nodes", AuthHandler.VerifyMiddleWare, ChainHandler.GetNodes)
+
+	// 根据农产品ID查询区块链中的农产品追溯信息
+	// 请求参数
+	// 需要 JWT Token（Authorization Header）
+	// &id=0&node=127.0.0.1:8080
+	// 成功
+	// {
+	// 	"status": "ok",
+	// 	"msg": "..."
+	//   }
+	// 失败
+	// {
+	// 	"status": "error",
+	// 	"msg": "查询错误：..."
+	//   }
 	engine.GET("/message", AuthHandler.VerifyMiddleWare, ChainHandler.SendMessage)
+	// 菜单，欢迎信息
+	// 主要用于前端验证用户是否已登录
+	// 请求参数
+	// 无，但需要 JWT Token（Authorization Header）
+	// 如果 Token 无效，中间件会拦截并返回 401 错误
+	// {
+	// 	"status": "ok",
+	// 	"msg": "欢迎登陆农产追溯通客户端"
+	//   }
 	engine.GET("/menu", AuthHandler.VerifyMiddleWare, AuthHandler.Menu)
 	engine.Run(":8081")
 }

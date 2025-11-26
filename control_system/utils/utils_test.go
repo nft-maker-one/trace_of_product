@@ -28,7 +28,7 @@ func TestLog(t *testing.T) {
 func TestYaml(t *testing.T) {
 	config, err := NewConfig("../config.yaml")
 	assert.Nil(t, err)
-	LogMsg([]string{"dsn"}, []string{config.Mysql.Dsn})
+	LogMsg([]string{"dsn"}, []string{config.Postgresql.Dsn})
 }
 
 // func TestByteToHash(t *testing.T) {

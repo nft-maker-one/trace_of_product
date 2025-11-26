@@ -248,7 +248,7 @@ func NewChainModel(path string) *ChainModel {
 		utils.LogMsg([]string{"NewChainModel"}, []string{"read config file failed err =" + err.Error()})
 	}
 	cm := ChainModel{}
-	cm.myDb = database.NewMyDb(cfg.Mysql.Dsn)
+	cm.myDb = database.NewMyDb(cfg.Postgresql.Dsn)
 	cm.reDB = database.NewReDb(cfg.Redis.Ip, cfg.Redis.Port)
 	return &cm
 
