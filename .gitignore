@@ -1,4 +1,8 @@
 *.yaml
 *.env
+*.mod
+*.sum
 snarkjs/
 plookup/
+.vscode/
+*/.vscode/*
