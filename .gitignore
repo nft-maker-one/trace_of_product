@@ -2,3 +2,17 @@
 *.env
 snarkjs/
 plookup/
+.vscode/
+control_system/.vscode
+control_system/config.yaml
+control_system/go.mod
+control_system/go.sum
+
+front-end/.*
+front-end/package-lock.json
+front-end/package.json
+
+trace_of_product/config.yaml
+trace_of_product/go.mod
+trace_of_product/go.sum
+trace_of_product/logs/app.log

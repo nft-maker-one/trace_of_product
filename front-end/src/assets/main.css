@@ -1,0 +1,102 @@
+/* 全局样式变量 */
+:root {
+  /* 主要颜色 */
+  --primary: #2e7d32;
+  --primary-light: #4caf50;
+  --primary-dark: #1b5e20;
+  --secondary: #0288d1;
+  --secondary-dark: #0277bd;
+  --accent: #ff9800;
+  --warning: #ff9800;
+  --error: #f44336;
+  --success: #4caf50;
+
+  /* 中性色 */
+  --light: #f5f7fa;
+  --dark: #263238;
+  --gray: #78909c;
+  --light-gray: #eceff1;
+  --border-color: #e0e0e0;
+
+  /* 阴影 */
+  --card-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  --card-shadow-hover: 0 8px 30px rgba(0, 0, 0, 0.12);
+  --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  --shadow-hover: 0 15px 40px rgba(46, 125, 50, 0.15);
+
+  /* 过渡动画 */
+  --transition: all 0.3s ease;
+
+  /* 边框半径 */
+  --border-radius-sm: 4px;
+  --border-radius: 8px;
+  --border-radius-lg: 16px;
+  --border-radius-xl: 24px;
+}
+
+/* 重置样式 */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+  background-color: var(--light);
+  color: var(--dark);
+  line-height: 1.6;
+  font-size: 14px;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+input, select, textarea, button {
+  font-family: inherit;
+  font-size: inherit;
+}
+
+/* 工具类 */
+.text-center { text-align: center; }
+.text-right { text-align: right; }
+.text-left { text-align: left; }
+
+.mt-1 { margin-top: 4px; }
+.mt-2 { margin-top: 8px; }
+.mt-3 { margin-top: 12px; }
+.mt-4 { margin-top: 16px; }
+.mt-5 { margin-top: 20px; }
+
+.mb-1 { margin-bottom: 4px; }
+.mb-2 { margin-bottom: 8px; }
+.mb-3 { margin-bottom: 12px; }
+.mb-4 { margin-bottom: 16px; }
+.mb-5 { margin-bottom: 20px; }
+
+.d-flex { display: flex; }
+.flex-column { flex-direction: column; }
+.align-items-center { align-items: center; }
+.justify-content-center { justify-content: center; }
+.justify-content-between { justify-content: space-between; }
+
+/* 动画 */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.fade-in {
+  animation: fadeIn 0.5s ease;
+}

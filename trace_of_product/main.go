@@ -3,8 +3,12 @@ package main
 import (
 	"agricultural_meta/database"
 	"agricultural_meta/network"
+	"agricultural_meta/utils"
+	"encoding/json"
 	"flag"
 	"fmt"
+	"net/http"
+	"strconv"
 )
 
 var DB = &database.NodeDb{}
@@ -24,6 +28,13 @@ func main() {
 	flag.Parse()
 	netAddr := ip + ":" + port
 	fmt.Println(netAddr)
+
+	// 初始化日志
+	if err := utils.InitLogger("./logs"); err != nil {
+		fmt.Printf("Failed to initialize logger: %v\n", err)
+		return
+	}
+
 	if help {
 		fmt.Println("农产追溯通使用详解")
 		fmt.Println("-----------------------------")
@@ -38,11 +49,39 @@ func main() {
 	} else if chainMode {
 		chain := network.NewNodeServer(netAddr)
 		chain.StartServer()
+
+		// 启动HTTP服务器用于日志监控
+		httpPort := 8080
+		go startHTTPServer(httpPort)
+		fmt.Printf("HTTP server started on port %d\n", httpPort)
 	} else {
 		fmt.Println("请务必指定节点的运行模式")
 		fmt.Println("输入 '-h' 查看帮助指令")
 	}
 }
 
-// encode => io.Writer  把编码后的数据写入 io.Writer
-// decode => io.Reader  把解码后的数据读入 io.Reader
+func startHTTPServer(port int) {
+	http.HandleFunc("/logs", handleLogs)
+	http.ListenAndServe(":"+strconv.Itoa(port), nil)
+}
+
+func handleLogs(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+	if r.Method == "OPTIONS" {
+		return
+	}
+
+	limit := 100 // 默认返回100条日志
+	if limitStr := r.URL.Query().Get("limit"); limitStr != "" {
+		if l, err := strconv.Atoi(limitStr); err == nil && l > 0 {
+			limit = l
+		}
+	}
+
+	logs := utils.GetLogs(limit)
+	json.NewEncoder(w).Encode(logs)
+}
