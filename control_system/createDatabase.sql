@@ -21,10 +21,21 @@ CREATE TABLE consortium_nodes (
 
 -- 创建 users 表
 CREATE TABLE users (
-    id SERIAL PRIMARY KEY,
-    user_name VARCHAR(255),
-    password VARCHAR(255)
-);
+  "id" int4 NOT NULL DEFAULT nextval('users_id_seq'::regclass),
+  "user_name" varchar(255),
+  "nick_name" varchar(255),
+  "email" varchar(255),
+  "password" varchar(255),
+  "invite_code" varchar(100),
+  "agree_terms" bool DEFAULT false,
+  "avatar_url" varchar(255) DEFAULT '/public/avatars/profile.jpg',
+  "profile_public" bool DEFAULT true,
+  "email_notifications" bool DEFAULT true,
+  "last_login_at" int8,
+  "created_at" timestamp(6) DEFAULT CURRENT_TIMESTAMP,
+  "updated_at" timestamp(6) DEFAULT CURRENT_TIMESTAMP
+)
+;
 
 -- 插入初始用户数据
-INSERT INTO users(user_name, password) VALUES ('admin', 'agri_chain');
+INSERT INTO users(user_name, email, password, agree_terms) VALUES ('admin', 'admin@agri-chain.com', 'agri_chain', true);

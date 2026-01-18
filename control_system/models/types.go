@@ -3,11 +3,23 @@ package models
 import (
 	"encoding/hex"
 	"fmt"
+	"time"
 )
 
 type User struct {
-	UserName string `gorm:"user_name" json:"user_name"`
-	Password string `gorm:"password" json:"password"`
+	ID                 int        `gorm:"column:id;primaryKey" json:"id"`
+	UserName           string     `gorm:"column:user_name;unique;not null" json:"user_name"`
+	Nickname           string     `gorm:"column:nick_name;default:''" json:"nickname"`
+	Email              string     `gorm:"column:email;unique;not null" json:"email"`
+	AvatarUrl          string     `gorm:"column:avatar_url;default:'/public/avatars/profile.jpg'" json:"avatar_url"`
+	Password           string     `gorm:"column:password;not null" json:"password"`
+	InviteCode         string     `gorm:"column:invite_code" json:"invite_code"`
+	AgreeTerms         bool       `gorm:"column:agree_terms;default:false" json:"agree_terms"`
+	ProfilePublic      bool       `gorm:"column:profile_public;default:true" json:"profile_public"`
+	EmailNotifications bool       `gorm:"column:email_notifications;default:true" json:"email_notifications"`
+	LastLoginAt        *time.Time `gorm:"column:last_login_at" json:"last_login_at,omitempty"`
+	CreatedAt          time.Time  `gorm:"column:created_at;autoCreateTime" json:"created_at"`
+	UpdatedAt          time.Time  `gorm:"column:updated_at;autoUpdateTime" json:"updated_at"`
 }
 
 type ConsortiumNode struct {

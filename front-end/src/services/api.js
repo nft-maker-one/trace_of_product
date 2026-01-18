@@ -92,18 +92,24 @@ export default {
     return api.get(`/message?id=${id}&node=${node}`)
   },
 
-  // 注册（如果有的话）
+  // 注册
   register(userData) {
-    return api.post('/register', userData)
+    return api.post('/register', {
+      username: userData.username,
+      email: userData.email,
+      password: userData.password,
+      invite_code: userData.invite_code,
+      agree_terms: userData.agree_terms
+    })
   },
 
-  // 其他API可以在这里添加
-  getSystemStatus() {
-    return api.get('/status')
+// 更新用户资料
+  updateProfile(profileData) {
+    return api.post('/user/update/profile', profileData)
   },
 
-  // 日志监控
-  getLogs(limit = 100) {
-    return api.get(`/logs?limit=${limit}`)
-  }
+// 更新用户头像
+  updateAvatar(avatarData) {
+    return api.post('/user/update/avatar', avatarData)
+  },
 }

@@ -9,7 +9,14 @@ export const useAuthStore = defineStore('auth', () => {
   // 从 localStorage 恢复用户信息
   const getStoredUser = () => {
     const stored = localStorage.getItem('user')
-    return stored ? JSON.parse(stored) : null
+    if (!stored) return null
+
+    const userData = JSON.parse(stored)
+    // 如果旧数据中没有nickname，使用username作为nicknameaine
+    if (!userData.nickname && userData.username) {
+      userData.nickname = userData.username
+    }
+    return userData
   }
 
   const token = ref(localStorage.getItem('token') || '')
@@ -48,15 +55,24 @@ export const useAuthStore = defineStore('auth', () => {
 
     try {
       const response = await api.login(username, password)
+      console.log("登录响应:", response)
 
-      if (response.token) {
-        setToken(response.token)
+      if (response.data.token) {
+        setToken(response.data.token)
 
         // 设置用户信息
         setUser({
+          id: response.data.user.id,
           username,
-          loginTime: new Date().toISOString()
+          nickname: response.data.user.nickname,
+          email: response.data.user.email,
+          avatarUrl: response.data.user.avatar_url,
+          loginTime: new Date().toISOString(),
+          lastLoginAt: response.data.user.last_login_at,
+          createdAt: response.data.user.created_at,
+          updatedAt: response.data.user.updated_at
         })
+        console.log("用户信息:", user)
 
         return {
           success: true,
@@ -67,6 +83,42 @@ export const useAuthStore = defineStore('auth', () => {
         return {
           success: false,
           message: response.message || '登录失败'
+        }
+      }
+    } catch (error) {
+      error.value = error.message || '网络错误，请检查连接'
+      return {
+        success: false,
+        message: error.message || '网络错误，请检查连接'
+      }
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function register(userData) {
+    loading.value = true
+    error.value = null
+
+    try {
+      const response = await api.register({
+        username: userData.username,
+        email: userData.email,
+        password: userData.password,
+        invite_code: userData.inviteCode || null,
+        agree_terms: true
+      })
+
+      if (response.success || response.code === 0) {
+        return {
+          success: true,
+          message: response.message || '注册成功'
+        }
+      } else {
+        error.value = response.message || '注册失败'
+        return {
+          success: false,
+          message: response.message || '注册失败'
         }
       }
     } catch (error) {
@@ -106,6 +158,7 @@ export const useAuthStore = defineStore('auth', () => {
     setUser,
     clearAuth,
     login,
+    register,
     checkAuth
   }
 })

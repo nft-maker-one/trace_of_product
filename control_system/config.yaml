@@ -1,6 +1,6 @@
 # 数据库配置
 postgresql:
-  dsn: "host=localhost user=postgres password=lwj123456 dbname=agri_chain port=5432 sslmode=disable TimeZone=Asia/Shanghai"
+  dsn: "host=localhost user=postgres password=kitty dbname=agri_chain port=5432 sslmode=disable TimeZone=Asia/Shanghai"
 redis:
   ip: "localhost"
   port: "6379"

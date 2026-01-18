@@ -105,11 +105,11 @@ const pageTitle = computed(() => {
 })
 
 const userName = computed(() => {
-  return authStore.user?.username || localStorage.getItem('username') || t('common.noData')
+  return authStore.user?.nickname || authStore.user?.username || localStorage.getItem('username') || t('common.noData')
 })
 
 const userAvatar = computed(() => {
-  return '/profile.jpg'
+  return '/public/avatars/profile.jpg'
 })
 
 const formatLoginTime = computed(() => {
@@ -145,6 +145,7 @@ function closeMobileMenuOnClick() {
 function handleLogout() {
   if (confirm(t('common.confirm') + t('layout.logout') + '？')) {
     authStore.clearAuth()
+    // TODO: 更新数据库上一次的登录时间
   }
 }
 
