@@ -36,6 +36,10 @@ func NewMemoryPool(cap int) *MemoryPool {
 	}
 }
 
+func (m *MemoryPool) Size() int {
+	return m.fifo.len
+}
+
 func (m *MemoryPool) AddEgg(egg core.Eggplant) {
 
 	m.lock.Lock()

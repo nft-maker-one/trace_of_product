@@ -1,0 +1,147 @@
+networks:
+  blockchain_network:
+    driver: bridge
+
+volumes:
+  mysql_data:
+
+services:
+  # MySQL数据库 - 区块链节点使用
+  mysql:
+    image: mysql:8.0
+    container_name: blockchain_mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: lwj123456
+      MYSQL_DATABASE: agri_chain
+      MYSQL_USER: agri_user
+      MYSQL_PASSWORD: lwj123456
+    volumes:
+      - mysql_data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    networks:
+      - blockchain_network
+    restart: unless-stopped
+    command: --default-authentication-plugin=mysql_native_password
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-plwj123456"]
+      timeout: 20s
+      retries: 10
+      interval: 10s
+      start_period: 40s
+
+  # 区块链节点1 - 主节点
+  blockchain_node1:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: blockchain_node1
+    environment:
+      - NODE_ID=1
+      - NODE_NAME=node1
+      - IP=blockchain_node1
+      - PORT=8081
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_USER=root
+      - DB_PASSWORD=lwj123456
+      - DB_NAME=agri_chain
+      - PEERS=blockchain_node2:8081,blockchain_node3:8081,blockchain_node4:8081
+    ports:
+      - "8081:8081"
+      - "8085:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - blockchain_network
+    restart: unless-stopped
+    volumes:
+      - ./config.yaml:/app/config.yaml
+
+  # 区块链节点2
+  blockchain_node2:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: blockchain_node2
+    environment:
+      - NODE_ID=2
+      - NODE_NAME=node2
+      - IP=blockchain_node2
+      - PORT=8081
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_USER=root
+      - DB_PASSWORD=lwj123456
+      - DB_NAME=agri_chain
+      - PEERS=blockchain_node1:8081,blockchain_node3:8081,blockchain_node4:8081
+    ports:
+      - "8082:8081"
+      - "8086:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - blockchain_network
+    restart: unless-stopped
+    volumes:
+      - ./config.yaml:/app/config.yaml
+
+  # 区块链节点3
+  blockchain_node3:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: blockchain_node3
+    environment:
+      - NODE_ID=3
+      - NODE_NAME=node3
+      - IP=blockchain_node3
+      - PORT=8081
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_USER=root
+      - DB_PASSWORD=lwj123456
+      - DB_NAME=agri_chain
+      - PEERS=blockchain_node1:8081,blockchain_node2:8081,blockchain_node4:8081
+    ports:
+      - "8083:8081"
+      - "8087:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - blockchain_network
+    restart: unless-stopped
+    volumes:
+      - ./config.yaml:/app/config.yaml
+
+  # 区块链节点4
+  blockchain_node4:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: blockchain_node4
+    environment:
+      - NODE_ID=4
+      - NODE_NAME=node4
+      - IP=blockchain_node4
+      - PORT=8081
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_USER=root
+      - DB_PASSWORD=lwj123456
+      - DB_NAME=agri_chain
+      - PEERS=blockchain_node1:8081,blockchain_node2:8081,blockchain_node3:8081
+    ports:
+      - "8084:8081"
+      - "8088:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - blockchain_network
+    restart: unless-stopped
+    volumes:
+      - ./config.yaml:/app/config.yaml

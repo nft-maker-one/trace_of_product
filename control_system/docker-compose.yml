@@ -1,0 +1,72 @@
+version: '3.8'
+
+networks:
+  control_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
+
+services:
+  # PostgreSQL数据库 - control_system使用
+  postgres:
+    image: postgres:13
+    container_name: control_postgres
+    environment:
+      POSTGRES_DB: agri_chain
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: lwj123456
+      POSTGRES_HOST_AUTH_METHOD: trust
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"  # 使用5433端口避免与主机冲突
+    networks:
+      - control_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      timeout: 20s
+      retries: 10
+      interval: 10s
+      start_period: 40s
+
+  # Redis数据库
+  redis:
+    image: redis:7-alpine
+    container_name: control_redis
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - control_network
+    restart: unless-stopped
+
+  # 控制系统后端
+  control_system:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: control_system
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=lwj123456
+      - DB_NAME=agri_chain
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - control_network
+    restart: unless-stopped
+    volumes:
+      - ./config.yaml:/app/config.yaml

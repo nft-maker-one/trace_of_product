@@ -64,8 +64,8 @@ const (
 )
 
 func CommitData(hash types.Hash, nonce uint64) []byte {
-	// 10000000000 -> 34 位 2 进制
-	res := make([]byte, 66)
+	// hash(32字节) + nonce(8字节) = 40字节
+	res := make([]byte, 40)
 	for i := 0; i < 32; i++ {
 		res[i] = hash[i]
 	}

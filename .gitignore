@@ -16,3 +16,6 @@ trace_of_product/config.yaml
 trace_of_product/go.mod
 trace_of_product/go.sum
 trace_of_product/logs/app.log
+
+
+record/

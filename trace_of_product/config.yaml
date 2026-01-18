@@ -1,3 +1,7 @@
 # 数据库配置
-mysql:
-  dsn: "root:lwj123456@tcp(127.0.0.1:3306)/agri_chain?charset=utf8mb4&parseTime=True&loc=Local"
+postgresql:
+  dsn: "host=postgres user=postgres password=lwj123456 dbname=agri_chain port=5432 sslmode=disable TimeZone=Asia/Shanghai"
+redis:
+  ip: "redis"
+  port: "6379"
+key: "agricultural_chain"

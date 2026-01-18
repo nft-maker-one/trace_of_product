@@ -29,7 +29,7 @@ func NewClient(addr string) *ClientNode {
 	if err != nil {
 		panic(err)
 	}
-	node.db = database.InitNodeDb(cfg.Mysql.Dsn)
+	node.db = database.InitNodeDb(cfg.Postgresql.Dsn)
 
 	return &node
 }

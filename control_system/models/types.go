@@ -3,19 +3,41 @@ package models
 import (
 	"encoding/hex"
 	"fmt"
+	"time"
 )
 
 type User struct {
-	UserName string `gorm:"user_name" json:"user_name"`
-	Password string `gorm:"password" json:"password"`
+	ID                 int       `gorm:"primaryKey;autoIncrement" json:"id"`
+	UserName           string    `gorm:"column:user_name;size:255" json:"user_name"`
+	NickName           string    `gorm:"column:nick_name;size:255" json:"nick_name"`
+	Email              string    `gorm:"column:email;size:255" json:"email"`
+	Password           string    `gorm:"column:password;size:255" json:"password"`
+	InviteCode         string    `gorm:"column:invite_code;size:100" json:"invite_code"`
+	AgreeTerms         bool      `gorm:"column:agree_terms;default:false" json:"agree_terms"`
+	AvatarURL          string    `gorm:"column:avatar_url;size:255;default:'/public/avatars/profile.jpg'" json:"avatar_url"`
+	ProfilePublic      bool      `gorm:"column:profile_public;default:true" json:"profile_public"`
+	EmailNotifications bool      `gorm:"column:email_notifications;default:true" json:"email_notifications"`
+	LastLoginAt        *int64    `gorm:"column:last_login_at" json:"last_login_at"`
+	CreatedAt          time.Time `gorm:"column:created_at;default:CURRENT_TIMESTAMP" json:"created_at"`
+	UpdatedAt          time.Time `gorm:"column:updated_at;default:CURRENT_TIMESTAMP" json:"updated_at"`
+}
+
+// TableName 指定表名
+func (User) TableName() string {
+	return "users"
 }
 
 type ConsortiumNode struct {
-	Id         int    `gorm:"id" json:"id"`
-	Addr       string `gorm:"addr" json:"addr"`
-	PubKey     []byte `gorm:"pubkey" json:"pub_key"`
-	CreateTime int64  `gorm:"time" json:"create_time"`
-	VerifyTime int    `gorm:"verify_time" json:"verify_time"`
+	Id         int64  `gorm:"primaryKey;column:id" json:"id"`
+	Addr       string `gorm:"column:addr;size:40" json:"addr"`
+	PubKey     []byte `gorm:"column:pub_key" json:"pub_key"`
+	CreateTime int64  `gorm:"column:create_time" json:"create_time"`
+	VerifyTime int    `gorm:"column:verify_time" json:"verify_time"`
+}
+
+// TableName 指定表名
+func (ConsortiumNode) TableName() string {
+	return "consortium_nodes"
 }
 
 type Hash [32]uint8

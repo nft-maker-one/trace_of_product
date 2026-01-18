@@ -35,7 +35,7 @@ func main() {
 	// 	"error": "string"
 	// }
 	engine.POST("/login", AuthHandler.Login)
-	
+
 	// 处理节点发送的农产品信息
 	engine.POST("/meta_data", ChainHandler.HandleChainResponse)
 
@@ -87,7 +87,22 @@ func main() {
 	// 	"msg": "欢迎登陆农产追溯通客户端"
 	//   }
 	engine.GET("/menu", AuthHandler.VerifyMiddleWare, AuthHandler.Menu)
-	engine.Run(":8081")
+
+	// 新增用户相关接口
+	engine.GET("/profile", AuthHandler.VerifyMiddleWare, AuthHandler.GetProfile)
+	engine.POST("/profile", AuthHandler.VerifyMiddleWare, AuthHandler.UpdateProfile)
+	engine.POST("/upload/avatar", AuthHandler.VerifyMiddleWare, AuthHandler.UploadAvatar)
+
+	// 区块链节点相关接口
+	engine.GET("/blockchain/nodes", AuthHandler.VerifyMiddleWare, ChainHandler.GetBlockchainNodes)
+	engine.GET("/blockchain/height", AuthHandler.VerifyMiddleWare, ChainHandler.GetBlockchainHeight)
+	engine.GET("/blockchain/blocks", AuthHandler.VerifyMiddleWare, ChainHandler.GetBlocksByRange)
+	engine.GET("/blockchain/status", AuthHandler.VerifyMiddleWare, ChainHandler.GetNodeStatus)
+
+	// 添加静态文件服务用于访问上传的头像文件
+	engine.Static("/public", "./public")
+
+	engine.Run(":8080")
 }
 
 func init() {

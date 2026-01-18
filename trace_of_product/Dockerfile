@@ -1,6 +1,7 @@
-FROM golang:1.20
+FROM golang:1.24
 WORKDIR /app
 COPY ./ /app/
 RUN go mod download
 RUN go build -o main
-CMD [ "./main","-ip","127.0.0.1""-port","8081","-chain"]
+EXPOSE 8081
+CMD ["./main", "-chain", "-ip", "0.0.0.0", "-port", "8081"]
