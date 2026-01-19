@@ -77,6 +77,49 @@ func (c *ChainModel) GetNodes(ctx *gin.Context) {
 	ctx.JSON(200, nodes)
 }
 
+// PingNode 测试节点连接状态
+// 请求参数: ?addr=127.0.0.1:8080
+// 成功返回: {"status": "ok", "msg": "节点连接成功", "response_time": 123}
+// 失败返回: {"status": "error", "msg": "节点连接失败: ..."}
+func (c *ChainModel) PingNode(ctx *gin.Context) {
+	addr := ctx.Query("addr")
+	if addr == "" {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"status": "error",
+			"msg":    "节点地址不能为空",
+		})
+		return
+	}
+
+	// 记录开始时间
+	startTime := time.Now()
+
+	// 尝试建立TCP连接测试节点可达性
+	conn, err := net.DialTimeout("tcp", addr, 5*time.Second)
+	if err != nil {
+		utils.LogError([]string{"PingNode"}, []string{fmt.Sprintf("连接节点 %s 失败: %s", addr, err.Error())})
+		ctx.JSON(http.StatusOK, gin.H{
+			"status":        "error",
+			"msg":           "节点连接失败: " + err.Error(),
+			"response_time": -1,
+			"online":        false,
+		})
+		return
+	}
+	defer conn.Close()
+
+	// 计算响应时间（毫秒）
+	responseTime := time.Since(startTime).Milliseconds()
+
+	utils.LogMsg([]string{"PingNode"}, []string{fmt.Sprintf("节点 %s 连接成功，响应时间: %dms", addr, responseTime)})
+	ctx.JSON(http.StatusOK, gin.H{
+		"status":        "ok",
+		"msg":           "节点连接成功",
+		"response_time": responseTime,
+		"online":        true,
+	})
+}
+
 func (c *ChainModel) SendMessage(ctx *gin.Context) {
 	id := ctx.DefaultQuery("id", "")
 	if id == "" {
