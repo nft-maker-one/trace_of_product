@@ -43,7 +43,6 @@ type UploadRequest struct {
 	StorageHash     string `json:"storage_hash"`
 	SellHeight      int    `json:"sell_height"`
 	SellHash        string `json:"sell_hash"`
-	NodeIp          string `json:"node_ip"`
 }
 
 const (
@@ -222,14 +221,47 @@ func (c *ChainModel) UpdateData(ctx *gin.Context) {
 		})
 		return
 	}
-	dialAddress := ur.NodeIp
-	err = tcpDial(reqByte, dialAddress)
-	if err != nil {
-		ctx.JSON(http.StatusOK, gin.H{
-			"status": "ok",
-			"msg":    "连接节点失败，尝试向其他节点发起请求",
-		})
-		return
+	// 自动选择可用的区块链节点
+	var nodes []models.ConsortiumNode
+	if res := c.myDb.Db.Find(&nodes); res.Error != nil {
+		utils.LogMsg([]string{"UpdateData"}, []string{"获取区块链节点失败: " + res.Error.Error()})
+		// 如果数据库中没有节点，尝试使用容器中的默认节点
+		defaultNodes := []string{"blockchain_node1:8081", "blockchain_node2:8081", "blockchain_node3:8081", "blockchain_node4:8081"}
+		success := false
+		for _, nodeAddr := range defaultNodes {
+			err = tcpDial(reqByte, nodeAddr)
+			if err == nil {
+				success = true
+				break
+			}
+			utils.LogMsg([]string{"UpdateData"}, []string{"连接节点 " + nodeAddr + " 失败: " + err.Error()})
+		}
+		if !success {
+			ctx.JSON(http.StatusServiceUnavailable, gin.H{
+				"status": "error",
+				"msg":    "所有区块链节点连接失败",
+			})
+			return
+		}
+	} else {
+		// 使用数据库中的节点
+		success := false
+		for _, node := range nodes {
+			err = tcpDial(reqByte, node.Addr)
+			if err == nil {
+				success = true
+				utils.LogMsg([]string{"UpdateData"}, []string{"成功连接节点: " + node.Addr})
+				break
+			}
+			utils.LogMsg([]string{"UpdateData"}, []string{"连接节点 " + node.Addr + " 失败: " + err.Error()})
+		}
+		if !success {
+			ctx.JSON(http.StatusServiceUnavailable, gin.H{
+				"status": "error",
+				"msg":    "所有区块链节点连接失败",
+			})
+			return
+		}
 	}
 	ctx.JSON(200, gin.H{
 		"status": "ok",
@@ -283,6 +315,157 @@ func tcpDial(data []byte, addr string) error {
 	}
 	conn.Close()
 	return nil
+}
+
+// 获取区块链节点列表
+func (c *ChainModel) GetBlockchainNodes(ctx *gin.Context) {
+	// 从数据库获取区块链节点列表
+	var nodes []models.ConsortiumNode
+	if res := c.myDb.Db.Find(&nodes); res.Error != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"status": "error",
+			"msg":    "获取区块链节点失败：" + res.Error.Error(),
+		})
+		return
+	}
+
+	// 转换为适合前端的格式
+	blockchainNodes := make([]gin.H, 0, len(nodes))
+	for _, node := range nodes {
+		blockchainNodes = append(blockchainNodes, gin.H{
+			"id":          node.Id,
+			"addr":        node.Addr,
+			"pub_key":     node.PubKey,
+			"create_time": node.CreateTime,
+			"verify_time": node.VerifyTime,
+			"http_addr":   "http://" + node.Addr[:len(node.Addr)-1] + "0", // 将8081改为8080用于HTTP调用
+		})
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"status": "ok",
+		"data":   blockchainNodes,
+	})
+}
+
+// 获取区块链最高区块高度
+func (c *ChainModel) GetBlockchainHeight(ctx *gin.Context) {
+	// 获取第一个可用的区块链节点
+	var nodes []models.ConsortiumNode
+	if res := c.myDb.Db.Find(&nodes); res.Error != nil || len(nodes) == 0 {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"status": "error",
+			"msg":    "未找到可用的区块链节点",
+		})
+		return
+	}
+
+	// 使用第一个节点获取高度信息
+	nodeAddr := nodes[0].Addr
+	// 将端口从8081改为8080用于HTTP调用
+	httpAddr := "http://" + nodeAddr[:len(nodeAddr)-1] + "0/api/height"
+
+	resp, err := http.Get(httpAddr)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"status": "error",
+			"msg":    "连接区块链节点失败：" + err.Error(),
+		})
+		return
+	}
+	defer resp.Body.Close()
+
+	var heightResponse map[string]interface{}
+	if err := json.NewDecoder(resp.Body).Decode(&heightResponse); err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"status": "error",
+			"msg":    "解析区块链响应失败：" + err.Error(),
+		})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, heightResponse)
+}
+
+// 根据区块范围获取区块数据
+func (c *ChainModel) GetBlocksByRange(ctx *gin.Context) {
+	start := ctx.DefaultQuery("start", "0")
+	end := ctx.DefaultQuery("end", "10")
+
+	// 获取第一个可用的区块链节点
+	var nodes []models.ConsortiumNode
+	if res := c.myDb.Db.Find(&nodes); res.Error != nil || len(nodes) == 0 {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"status": "error",
+			"msg":    "未找到可用的区块链节点",
+		})
+		return
+	}
+
+	// 使用第一个节点获取区块数据
+	nodeAddr := nodes[0].Addr
+	// 将端口从8081改为8080用于HTTP调用
+	httpAddr := fmt.Sprintf("http://%s0/api/blocks?start=%s&end=%s", nodeAddr[:len(nodeAddr)-1], start, end)
+
+	resp, err := http.Get(httpAddr)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"status": "error",
+			"msg":    "连接区块链节点失败：" + err.Error(),
+		})
+		return
+	}
+	defer resp.Body.Close()
+
+	var blocksResponse map[string]interface{}
+	if err := json.NewDecoder(resp.Body).Decode(&blocksResponse); err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"status": "error",
+			"msg":    "解析区块链响应失败：" + err.Error(),
+		})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, blocksResponse)
+}
+
+// 获取区块链节点状态
+func (c *ChainModel) GetNodeStatus(ctx *gin.Context) {
+	// 获取第一个可用的区块链节点
+	var nodes []models.ConsortiumNode
+	if res := c.myDb.Db.Find(&nodes); res.Error != nil || len(nodes) == 0 {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"status": "error",
+			"msg":    "未找到可用的区块链节点",
+		})
+		return
+	}
+
+	// 使用第一个节点获取状态信息
+	nodeAddr := nodes[0].Addr
+	// 将端口从8081改为8080用于HTTP调用
+	httpAddr := "http://" + nodeAddr[:len(nodeAddr)-1] + "0/api/node/status"
+
+	resp, err := http.Get(httpAddr)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"status": "error",
+			"msg":    "连接区块链节点失败：" + err.Error(),
+		})
+		return
+	}
+	defer resp.Body.Close()
+
+	var statusResponse map[string]interface{}
+	if err := json.NewDecoder(resp.Body).Decode(&statusResponse); err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"status": "error",
+			"msg":    "解析区块链响应失败：" + err.Error(),
+		})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, statusResponse)
 }
 
 func NewChainModel(path string) *ChainModel {

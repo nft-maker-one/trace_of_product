@@ -1,4 +1,4 @@
--- Active: 1749016188917@@127.0.0.1@5432@agri_chain
+-- Active: 1759935252193@@127.0.0.1@5432@agri_chain
 -- PostgreSQL 数据库初始化脚本
 
 -- CREATE DATABASE agri_chain;
@@ -7,6 +7,8 @@
 -- \dt
 
 -- 删除表（如果存在）
+
+CREATE DATABASE agri_chain;
 DROP TABLE IF EXISTS consortium_nodes;
 DROP TABLE IF EXISTS users;
 
@@ -19,6 +21,7 @@ CREATE TABLE consortium_nodes (
     verify_time INTEGER
 );
 
+-- 创建 users 表
 -- 创建 users 表
 CREATE TABLE users (
   "id" int4 NOT NULL DEFAULT nextval('users_id_seq'::regclass),
@@ -34,8 +37,7 @@ CREATE TABLE users (
   "last_login_at" int8,
   "created_at" timestamp(6) DEFAULT CURRENT_TIMESTAMP,
   "updated_at" timestamp(6) DEFAULT CURRENT_TIMESTAMP
-)
-;
+);
 
 -- 插入初始用户数据
 INSERT INTO users(user_name, email, password, agree_terms) VALUES ('admin', 'admin@agri-chain.com', 'agri_chain', true);

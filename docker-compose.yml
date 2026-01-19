@@ -1,0 +1,192 @@
+networks:
+  trace_of_product:
+    driver: bridge
+
+
+volumes:
+  postgres_data:
+  redis_data:
+
+services:
+  # PostgreSQL数据库 - control_system使用
+  postgres:
+    image: postgres:13
+    container_name: control_postgres
+    environment:
+      POSTGRES_DB: agri_chain
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: lwj123456
+      POSTGRES_HOST_AUTH_METHOD: trust
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"  # 使用5433端口避免与主机冲突
+    networks:
+      - trace_of_product
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      timeout: 20s
+      retries: 10
+      interval: 10s
+      start_period: 40s
+
+  redis:
+    image: redis:7-alpine
+    container_name: control_redis
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - trace_of_product
+    restart: unless-stopped
+
+  control_system:
+    build:
+      context: ./control_system
+      dockerfile: Dockerfile
+    container_name: control_system
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=lwj123456
+      - DB_NAME=agri_chain
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - trace_of_product
+    restart: unless-stopped
+    volumes:
+      - ./control_system/config.yaml:/app/config.yaml
+
+  blockchain_node1:
+    build:
+      context: ./trace_of_product
+      dockerfile: Dockerfile
+    container_name: blockchain_node1
+    environment:
+      - NODE_ID=1
+      - NODE_NAME=node1
+      - IP=blockchain_node1
+      - PORT=8081
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=lwj123456
+      - DB_NAME=agri_chain
+      - PEERS=blockchain_node2:8081,blockchain_node3:8081,blockchain_node4:8081
+    ports:
+      - "8081:8081"
+      - "8085:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - trace_of_product
+    restart: unless-stopped
+    volumes:
+      - ./trace_of_product/config.yaml:/app/config.yaml
+
+  # 区块链节点2
+  blockchain_node2:
+    build:
+      context: ./trace_of_product
+      dockerfile: Dockerfile
+    container_name: blockchain_node2
+    environment:
+      - NODE_ID=2
+      - NODE_NAME=node2
+      - IP=blockchain_node2
+      - PORT=8081
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=lwj123456
+      - DB_NAME=agri_chain
+      - PEERS=blockchain_node1:8081,blockchain_node3:8081,blockchain_node4:8081
+    ports:
+      - "8082:8081"
+      - "8086:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - trace_of_product
+    restart: unless-stopped
+    volumes:
+      - ./trace_of_product/config.yaml:/app/config.yaml
+
+  # 区块链节点3
+  blockchain_node3:
+    build:
+      context: ./trace_of_product
+      dockerfile: Dockerfile
+    container_name: blockchain_node3
+    environment:
+      - NODE_ID=3
+      - NODE_NAME=node3
+      - IP=blockchain_node3
+      - PORT=8081
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=lwj123456
+      - DB_NAME=agri_chain
+      - PEERS=blockchain_node1:8081,blockchain_node2:8081,blockchain_node4:8081
+    ports:
+      - "8083:8081"
+      - "8087:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - trace_of_product
+    restart: unless-stopped
+    volumes:
+      - ./trace_of_product/config.yaml:/app/config.yaml
+
+  # 区块链节点4
+  blockchain_node4:
+    build:
+      context: ./trace_of_product
+      dockerfile: Dockerfile
+    container_name: blockchain_node4
+    environment:
+      - NODE_ID=4
+      - NODE_NAME=node4
+      - IP=blockchain_node4
+      - PORT=8081
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=lwj123456
+      - DB_NAME=agri_chain
+      - PEERS=blockchain_node1:8081,blockchain_node2:8081,blockchain_node3:8081
+    ports:
+      - "8084:8081"
+      - "8088:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - trace_of_product
+    restart: unless-stopped
+    volumes:
+      - ./trace_of_product/config.yaml:/app/config.yaml

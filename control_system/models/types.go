@@ -23,11 +23,16 @@ type User struct {
 }
 
 type ConsortiumNode struct {
-	Id         int    `gorm:"id" json:"id"`
-	Addr       string `gorm:"addr" json:"addr"`
-	PubKey     []byte `gorm:"pubkey" json:"pub_key"`
-	CreateTime int64  `gorm:"time" json:"create_time"`
-	VerifyTime int    `gorm:"verify_time" json:"verify_time"`
+	Id         int64  `gorm:"primaryKey;column:id" json:"id"`
+	Addr       string `gorm:"column:addr;size:40" json:"addr"`
+	PubKey     []byte `gorm:"column:pub_key" json:"pub_key"`
+	CreateTime int64  `gorm:"column:create_time" json:"create_time"`
+	VerifyTime int    `gorm:"column:verify_time" json:"verify_time"`
+}
+
+// TableName 指定表名
+func (ConsortiumNode) TableName() string {
+	return "consortium_nodes"
 }
 
 type Hash [32]uint8

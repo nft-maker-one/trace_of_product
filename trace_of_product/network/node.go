@@ -13,6 +13,7 @@ import (
 	"math"
 	"math/rand"
 	"net/http"
+	"os"
 	"strconv"
 	"sync"
 	"time"
@@ -58,8 +59,17 @@ func NewNodeServer(addr string) *NodeServer {
 		logrus.Errorln("read config error")
 		panic(err)
 	}
-	server.Db = database.InitNodeDb(cfg.Mysql.Dsn)
+	server.Db = database.InitNodeDb(cfg.Postgresql.Dsn)
 	server.Addr = addr
+
+	// 获取容器名称用于数据库注册，以便其他容器能够连接
+	containerName := os.Getenv("HOSTNAME") // Docker容器的hostname就是容器名
+	var dbAddr string
+	if containerName != "" {
+		dbAddr = containerName + ":8081" // 使用容器名:端口的格式
+	} else {
+		dbAddr = addr // 回退到原始地址
+	}
 	server.PubKey = crypto.GenerateKeyPair(id)
 	server.MessagePool = make(map[types.Hash]core.Block)
 	server.PrePareConfirmCount = make(map[types.Hash]map[int]bool)
@@ -72,7 +82,7 @@ func NewNodeServer(addr string) *NodeServer {
 	if err != nil {
 		panic(err)
 	}
-	leaderId, err := server.Db.AddNode(server.Id, server.Addr, server.PubKey)
+	leaderId, err := server.Db.AddNode(server.Id, dbAddr, server.PubKey)
 	if err != nil {
 		panic(err)
 	}
@@ -324,9 +334,9 @@ func (s *NodeServer) handlePrePrepare(payload []byte) {
 	p.Digest = pp.Digest
 	p.NodeId = s.Id
 	p.SequencId = s.SequenceId
-	sig, err = s.priKey.Sign(hash[:])
+	sig, err = s.priKey.Sign(p.Digest[:])
 	if err != nil {
-		utils.LogError([]string{"handlePrePrepare"}, []string{"refuse prepare,the PrePrepare Message is not signed by the Leader Node"})
+		utils.LogError([]string{"handlePrePrepare"}, []string{"sign prepare digest failed: " + err.Error()})
 		return
 	}
 	p.Sign = sig.ToByte()
@@ -354,6 +364,7 @@ func (s *NodeServer) handlePrepare(payload []byte) {
 	}
 	if p.SequencId != s.SequenceId {
 		utils.LogError([]string{"handlePrepare"}, []string{"the sequenceId is not correct"})
+		return
 	}
 	node, err := s.Db.SearchNodeById(p.NodeId)
 	if err != nil {
@@ -366,7 +377,7 @@ func (s *NodeServer) handlePrepare(payload []byte) {
 		return
 	}
 	if !sign.Verify(node.PubKey, p.Digest[:]) {
-		utils.LogError([]string{"handlePrepare"}, []string{"the signature is invalid in prepare"})
+		utils.LogError([]string{"handlePrepare"}, []string{fmt.Sprintf("the signature is invalid in prepare - NodeId: %d, DigestHex: %x", p.NodeId, p.Digest[:])})
 		return
 	}
 	s.lock.Lock()
@@ -380,14 +391,20 @@ func (s *NodeServer) handlePrepare(payload []byte) {
 	} else {
 		threshold = tNodeNum/3*2 - 1
 	}
+	shouldBroadcastCommit := pNodeNum >= threshold && !s.IsCommitBroadcast[p.Digest]
+	if shouldBroadcastCommit {
+		s.IsCommitBroadcast[p.Digest] = true
+	}
 	s.lock.Unlock()
-	if pNodeNum >= threshold && !s.IsCommitBroadcast[p.Digest] {
+
+	if shouldBroadcastCommit {
 		nonce := uint64(randomId())
 		signCommit := CommitData(p.Digest, nonce)
 		fmt.Printf("commitData = %s", hex.EncodeToString(signCommit))
 		sig, err := s.priKey.Sign(signCommit)
 		if err != nil {
-			utils.LogError([]string{"handlePrepare"}, []string{"sign commit data failed, err=", err.Error()})
+			utils.LogError([]string{"handlePrepare"}, []string{"sign commit data failed, err=" + err.Error()})
+			return
 		}
 		c := new(Commit)
 		c.Sign = sig.ToByte()
@@ -400,10 +417,10 @@ func (s *NodeServer) handlePrepare(payload []byte) {
 		payload, err = json.Marshal(c)
 		if err != nil {
 			utils.LogError([]string{"handlePrepare"}, []string{"marshal commit failed err= " + err.Error()})
+			return
 		}
 		rpc.Payload = payload
 		s.Broadcast(rpc)
-		s.IsCommitBroadcast[p.Digest] = true
 		utils.LogMsg([]string{"handlePrepare"}, []string{"broadcast completed"})
 	}
 
@@ -428,15 +445,25 @@ func (s *NodeServer) handleCommit(payload []byte) {
 	}
 	cData := CommitData(c.Digest, c.Nonce)
 	sig, err := crypto.ByteToSignature(c.Sign)
-
-	if !sig.Verify(cNode.PubKey, cData) {
-		utils.LogError([]string{"handleCommit"}, []string{"signature is invalid"})
+	if err != nil {
+		utils.LogError([]string{"handleCommit"}, []string{"signature decode failed: " + err.Error()})
 		return
 	}
+	if !sig.Verify(cNode.PubKey, cData) {
+		utils.LogError([]string{"handleCommit"}, []string{fmt.Sprintf("signature is invalid in commit - NodeId: %d, DigestHex: %x, Nonce: %d", c.NodeId, c.Digest[:], c.Nonce)})
+		return
+	}
+	s.lock.Lock()
 	s.commitAdd(c.Digest, c.NodeId)
 	cNodeNum := len(s.CommitConfirmCount[c.Digest])
 	tNodeNum := s.Db.GetNum()
-	if cNodeNum > tNodeNum/3*2 && !s.isReply[c.Digest] && s.IsCommitBroadcast[c.Digest] {
+	shouldAddBlock := cNodeNum > tNodeNum/3*2 && !s.isReply[c.Digest] && s.IsCommitBroadcast[c.Digest]
+	if shouldAddBlock {
+		s.isReply[c.Digest] = true
+	}
+	s.lock.Unlock()
+
+	if shouldAddBlock {
 		block := s.MessagePool[c.Digest]
 		if err != nil {
 			utils.LogError([]string{"handleCommit"}, []string{"decode block failed err=" + err.Error()})
