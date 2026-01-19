@@ -112,4 +112,9 @@ export default {
   updateAvatar(avatarData) {
     return api.post('/user/update/avatar', avatarData)
   },
+
+  // 测试节点连接
+  pingNode(addr) {
+    return api.get('/node/ping', { params: { addr } })
+  },
 }

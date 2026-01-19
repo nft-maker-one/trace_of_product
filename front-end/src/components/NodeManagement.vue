@@ -619,13 +619,38 @@ function showNodeDetail(node) {
   showDetailDialog.value = true
 }
 
-function pingNode(node) {
-  alert(`正在测试节点 ${node.id} 的连接...\n模拟测试中，实际实现需调用API`)
-  // 实际实现应该调用API测试节点连接
+async function pingNode(node) {
+  try {
+    // 显示正在测试的提示
+    node.status = 'pending'
+
+    const result = await api.pingNode(node.addr)
+
+    if (result.online) {
+      // 更新节点状态为在线
+      node.status = 'online'
+      node.response_time = result.response_time
+      alert(`✅ 节点 ${node.id} 连接成功！\n响应时间: ${result.response_time}ms`)
+    } else {
+      // 更新节点状态为离线
+      node.status = 'offline'
+      node.response_time = -1
+      alert(`❌ 节点 ${node.id} 连接失败\n${result.msg}`)
+    }
+
+    // 更新统计信息
+    updateNodeStats()
+  } catch (error) {
+    console.error('测试节点连接失败:', error)
+    node.status = 'offline'
+    node.response_time = -1
+    alert(`❌ 测试节点 ${node.id} 连接失败\n${error.message || '网络错误'}`)
+    updateNodeStats()
+  }
 }
 
-function testNodeConnection(node) {
-  pingNode(node)
+async function testNodeConnection(node) {
+  await pingNode(node)
 }
 
 function editNode(node) {

@@ -101,6 +101,26 @@ func main() {
 	//   }
 	engine.GET("/nodes", AuthHandler.VerifyMiddleWare, ChainHandler.GetNodes)
 
+	// 测试节点连接状态
+	// 请求参数
+	// 需要 JWT Token（Authorization Header）
+	// ?addr=127.0.0.1:8080
+	// 成功
+	// {
+	// 	"status": "ok",
+	// 	"msg": "节点连接成功",
+	// 	"response_time": 123,
+	// 	"online": true
+	// }
+	// 失败
+	// {
+	// 	"status": "error",
+	// 	"msg": "节点连接失败: ...",
+	// 	"response_time": -1,
+	// 	"online": false
+	// }
+	engine.GET("/node/ping", AuthHandler.VerifyMiddleWare, ChainHandler.PingNode)
+
 	// 根据农产品ID查询区块链中的农产品追溯信息
 	// 请求参数
 	// 需要 JWT Token（Authorization Header）
