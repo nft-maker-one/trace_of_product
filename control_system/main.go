@@ -36,6 +36,45 @@ func main() {
 	// }
 	engine.POST("/login", AuthHandler.Login)
 
+	// 注册新用户
+	// 请求参数
+	// {
+	// 	"username": "string",
+	// 	"email": "string",
+	// 	"password": "string",
+	// 	"invite_code": "string",
+	// 	"agree_terms": true
+	// }
+	// 成功
+	// {
+	// 	"success": true,
+	// 	"message": "Registration successful",
+	// 	"user_id": 0
+	// }
+	// 失败
+	// {
+	// 	"success": false,
+	// 	"message": "string"
+	// }
+	engine.POST("/register", AuthHandler.Register)
+
+	// 更新用户资料
+	// 请求参数
+	// {
+	// 	"nickname": "string",
+	// 	"email": "string",
+	// 	"profile_public": true,
+	// 	"email_notifications": true
+	// }
+	engine.POST("/user/update/profile", AuthHandler.VerifyMiddleWare, AuthHandler.UpdateProfile)
+
+	// 更新用户头像
+	// 请求参数
+	// {
+	// 	"avatar_url": "string"
+	// }
+	engine.POST("/user/update/avatar", AuthHandler.VerifyMiddleWare, AuthHandler.UpdateAvatar)
+
 	// 处理节点发送的农产品信息
 	engine.POST("/meta_data", ChainHandler.HandleChainResponse)
 

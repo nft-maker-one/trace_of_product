@@ -7,7 +7,7 @@
             <i class="fas fa-user-circle"></i>
             {{ t('personalCenter.userInfo') }}
           </h3>
-          <button class="btn btn-outline" @click="editProfile">
+          <button class="btn btn-outline" @click="showEditModal = true">
             <i class="fas fa-edit"></i>
             {{ t('personalCenter.editProfile') }}
           </button>
@@ -17,12 +17,12 @@
             <img :src="userAvatar" alt="User Avatar" class="profile-avatar">
             <h3>{{ userName }}</h3>
             <p class="user-role">农产品溯源系统用户</p>
-            <div class="avatar-actions">
+            <!-- <div class="avatar-actions">
               <button class="btn btn-sm" @click="changeAvatar">
                 <i class="fas fa-camera"></i>
                 {{ t('personalCenter.changeAvatar') }}
               </button>
-            </div>
+            </div> -->
           </div>
 
           <div class="user-details">
@@ -62,13 +62,6 @@
                 {{ t('personalCenter.email') }}:
               </div>
               <div class="detail-value">{{ userEmail }}</div>
-            </div>
-            <div class="detail-item">
-              <div class="detail-label">
-                <i class="fas fa-phone"></i>
-                {{ t('personalCenter.phone') }}:
-              </div>
-              <div class="detail-value">{{ userPhone }}</div>
             </div>
           </div>
         </div>
@@ -212,6 +205,11 @@
         </div>
       </div>
     </div>
+    <!-- 模态框 -->
+      <EditProfileModal
+        :visible="showEditModal"
+        @update:visible="showEditModal = $event"
+      />
   </div>
 </template>
 
@@ -219,19 +217,23 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useAuthStore } from '../stores/auth'
 import { useI18n } from 'vue-i18n'
+import EditProfileModal from './EditProfileModal.vue'
 
 const authStore = useAuthStore()
 const { t } = useI18n()
 
 // 用户信息
 const userName = computed(() => {
-  return authStore.user?.username || t('personalCenter.notLoggedIn')
+  return authStore.user?.nickname || authStore.user?.username || t('personalCenter.notLoggedIn')
 })
 const userId = computed(() => {
-  return authStore.user?.userId || 'USER' + Math.random().toString().slice(2, 8)
+  return authStore.user?.id || 'USER' + Math.random().toString().slice(2, 8)
 })
-const userEmail = ref('user@example.com')
-const userPhone = ref('138****5678')
+const userEmail = computed(() => {
+  return authStore.user?.email
+})
+const userAvatar = computed(() => authStore.user?.avatarUrl)
+
 const userType = ref(t('personalCenter.standardUser'))
 const lastActivity = computed(() => {
   return new Date().toLocaleString('zh-CN', {
@@ -242,7 +244,6 @@ const lastActivity = computed(() => {
     minute: '2-digit'
   })
 })
-const userAvatar = computed(() => '/profile.jpg')
 
 const formatLoginTime = computed(() => {
   if (authStore.user?.loginTime) {
@@ -309,13 +310,11 @@ const activityLogs = ref([
   }
 ])
 
-function editProfile() {
-  alert(t('personalCenter.editProfileDeveloping'))
-}
+const showEditModal = ref(false)
 
-function changeAvatar() {
-  alert(t('personalCenter.changeAvatarDeveloping'))
-}
+// function changeAvatar() {
+//   alert(t('personalCenter.changeAvatarDeveloping'))
+// }
 
 function refreshSystemStatus() {
   // 模拟刷新系统状态

@@ -6,18 +6,18 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, markRaw } from 'vue'
 import LoginForm from '../components/LoginForm.vue'
 import RegisterForm from '../components/RegisterForm.vue'
 
-const currentComponent = ref(LoginForm)
+const currentComponent = ref(markRaw(LoginForm))
 
 function showLogin() {
-  currentComponent.value = LoginForm
+  currentComponent.value = markRaw(LoginForm)
 }
 
 function showRegister() {
-  currentComponent.value = RegisterForm
+  currentComponent.value = markRaw(RegisterForm)
 }
 </script>
 

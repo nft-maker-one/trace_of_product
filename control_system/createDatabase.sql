@@ -40,4 +40,4 @@ CREATE TABLE users (
 );
 
 -- 插入初始用户数据
-INSERT INTO users(user_name, password) VALUES ('admin', 'agri_chain');
+INSERT INTO users(user_name, email, password, agree_terms) VALUES ('admin', 'admin@agri-chain.com', 'agri_chain', true);
