@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-const API_BASE_URL = 'http://localhost:8081'
+const API_BASE_URL = 'http://localhost:8080'
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -116,5 +116,22 @@ export default {
   // 测试节点连接
   pingNode(addr) {
     return api.get('/node/ping', { params: { addr } })
+  },
+
+  // 区块链节点相关接口
+  getBlockchainNodes() {
+    return api.get('/blockchain/nodes')
+  },
+
+  getBlockchainHeight() {
+    return api.get('/blockchain/height')
+  },
+
+  getBlocksByRange(start, end) {
+    return api.get('/blockchain/blocks', { params: { start, end } })
+  },
+
+  getNodeStatus() {
+    return api.get('/blockchain/status')
   },
 }

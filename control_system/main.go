@@ -147,11 +147,6 @@ func main() {
 	//   }
 	engine.GET("/menu", AuthHandler.VerifyMiddleWare, AuthHandler.Menu)
 
-	// 新增用户相关接口
-	engine.GET("/profile", AuthHandler.VerifyMiddleWare, AuthHandler.GetProfile)
-	engine.POST("/profile", AuthHandler.VerifyMiddleWare, AuthHandler.UpdateProfile)
-	engine.POST("/upload/avatar", AuthHandler.VerifyMiddleWare, AuthHandler.UploadAvatar)
-
 	// 区块链节点相关接口
 	engine.GET("/blockchain/nodes", AuthHandler.VerifyMiddleWare, ChainHandler.GetBlockchainNodes)
 	engine.GET("/blockchain/height", AuthHandler.VerifyMiddleWare, ChainHandler.GetBlockchainHeight)

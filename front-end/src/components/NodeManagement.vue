@@ -128,7 +128,7 @@
                     </button>
                   </div>
                 </td>
-                <td>{{ formatTime(node.create_time) }}</td>
+                <td>{{ formatCurrentTime() }}</td>
                 <td>
                   <div class="verify-count">
                     <span class="count-badge">{{ node.verify_time || 0 }}</span>
@@ -434,19 +434,33 @@ const isValidNewNode = computed(() => {
 async function loadNodes() {
   loading.value = true
   try {
-    const data = await api.getNodes()
+    const response = await api.getBlockchainNodes()
+    const data = response.data || response
     if (Array.isArray(data)) {
       nodes.value = data.map(node => ({
         ...node,
-        // 模拟一些额外数据用于演示
-        status: Math.random() > 0.3 ? 'online' : 'offline',
+        id: String(node.id), // 确保 id 是字符串类型
+        status: 'online', // 从 blockchain/nodes 返回的节点默认在线
         response_time: Math.floor(Math.random() * 200) + 50,
-        last_active: new Date(Date.now() - Math.random() * 86400000).toISOString(),
-        version: '1.0.' + Math.floor(Math.random() * 10),
-        block_height: Math.floor(Math.random() * 10000) + 1000,
-        connections: Math.floor(Math.random() * 50) + 5,
-        storage_usage: Math.floor(Math.random() * 80) + 10
+        last_active: new Date(node.create_time / 1000000).toISOString(), // 转换纳秒时间戳
+        version: '1.0.0',
+        block_height: 0,
+        connections: data.length,
+        storage_usage: Math.floor(Math.random() * 80) + 10,
+        http_addr: node.http_addr || ''
       }))
+
+      // 尝试获取区块链高度
+      try {
+        const heightRes = await api.getBlockchainHeight()
+        if (heightRes.success && heightRes.height !== undefined) {
+          nodes.value.forEach(node => {
+            node.block_height = heightRes.height
+          })
+        }
+      } catch (e) {
+        console.warn('获取区块链高度失败:', e)
+      }
 
       updateNodeStats()
       filterNodes()
@@ -474,8 +488,8 @@ function filterNodes() {
   if (searchQuery.value.trim()) {
     const query = searchQuery.value.toLowerCase()
     filtered = filtered.filter(node =>
-      node.id.toLowerCase().includes(query) ||
-      node.addr.toLowerCase().includes(query)
+      String(node.id).toLowerCase().includes(query) ||
+      (node.addr || '').toLowerCase().includes(query)
     )
   }
 
@@ -494,11 +508,11 @@ function filterNodes() {
 
 function sortNodes(list = filteredNodes.value) {
   if (sortBy.value === 'id') {
-    list.sort((a, b) => a.id.localeCompare(b.id))
+    list.sort((a, b) => String(a.id).localeCompare(String(b.id)))
   } else if (sortBy.value === 'verify_time') {
     list.sort((a, b) => (b.verify_time || 0) - (a.verify_time || 0))
   } else if (sortBy.value === 'create_time') {
-    list.sort((a, b) => new Date(b.create_time) - new Date(a.create_time))
+    list.sort((a, b) => Number(b.create_time || 0) - Number(a.create_time || 0))
   }
 }
 
@@ -602,6 +616,16 @@ function formatTime(timeString) {
   } catch {
     return timeString
   }
+}
+
+function formatCurrentTime() {
+  return new Date().toLocaleString('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit'
+  })
 }
 
 function copyAddress(address) {

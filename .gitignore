@@ -11,6 +11,7 @@ control_system/go.sum
 front-end/.*
 front-end/package-lock.json
 front-end/package.json
+front-end/node_modules/*
 
 trace_of_product/config.yaml
 trace_of_product/go.mod

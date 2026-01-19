@@ -269,9 +269,11 @@ function showUploadResult(message, type, icon) {
   }, 3000)
 }
 
-function formatTime(timeString) {
-  if (!timeString) return t('dataUpload.unknown')
-  return new Date(timeString).toLocaleString()
+function formatTime(timestamp) {
+  if (!timestamp) return t('dataUpload.unknown')
+  // create_time 是纳秒时间戳，需要转换为毫秒
+  const ms = typeof timestamp === 'number' ? Math.floor(timestamp / 1000000) : timestamp
+  return new Date(ms).toLocaleString()
 }
 
 onMounted(() => {
