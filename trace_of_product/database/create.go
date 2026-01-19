@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/sirupsen/logrus"
-	"gorm.io/driver/mysql"
+	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
@@ -25,18 +25,48 @@ type ConsortiumNode struct {
 }
 
 func initDataBase(dsn string) *gorm.DB {
-	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
-	if err != nil {
-		panic(err)
+	var db *gorm.DB
+	var err error
+
+	// 重试连接PostgreSQL，最多等待60秒
+	maxRetries := 12
+	retryInterval := 5 * time.Second
+
+	for i := 0; i < maxRetries; i++ {
+		db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
+		if err == nil {
+			// 测试连接
+			sqlDB, err := db.DB()
+			if err == nil {
+				err = sqlDB.Ping()
+				if err == nil {
+					utils.LogMsg([]string{"initDataBase"}, []string{"success"})
+					return db
+				}
+			}
+		}
+
+		utils.LogMsg([]string{"initDataBase"}, []string{fmt.Sprintf("attempt %d/%d failed: %v, retrying in %v", i+1, maxRetries, err, retryInterval)})
+		time.Sleep(retryInterval)
 	}
-	utils.LogMsg([]string{"initDataBase"}, []string{"success"})
-	return db
+
+	utils.LogMsg([]string{"initDataBase"}, []string{fmt.Sprintf("failed to connect to database after %d attempts", maxRetries)})
+	panic(err)
 }
 
 func InitNodeDb(dsn string) *NodeDb {
 	db := NodeDb{}
 	db.Nodes = make([]string, 0)
 	db.DB = initDataBase(dsn)
+
+	// 自动创建表
+	err := db.DB.AutoMigrate(&ConsortiumNode{})
+	if err != nil {
+		utils.LogMsg([]string{"InitNodeDb"}, []string{"auto migrate failed: " + err.Error()})
+		panic(err)
+	}
+	utils.LogMsg([]string{"InitNodeDb"}, []string{"auto migrate success"})
+
 	return &db
 }
 

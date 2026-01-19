@@ -7,9 +7,14 @@ import (
 )
 
 type Config struct {
-	Mysql struct {
+	Postgresql struct {
 		Dsn string `yaml:"dsn"`
-	} `yaml:"mysql"`
+	} `yaml:"postgresql"`
+	Redis struct {
+		Ip   string `yaml:"ip"`
+		Port string `yaml:"port"`
+	} `yaml:"redis"`
+	Key string `yaml:"key"`
 }
 
 func NewConfig(filePath string) (*Config, error) {

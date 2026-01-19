@@ -12,14 +12,14 @@ import (
 func TestInitDb(t *testing.T) {
 	config, err := utils.NewConfig("../config.yaml")
 	assert.Nil(t, err)
-	db := InitNodeDb(config.Mysql.Dsn)
+	db := InitNodeDb(config.Postgresql.Dsn)
 	assert.NotNil(t, db)
 }
 
 func TestAddNode(t *testing.T) {
 	config, err := utils.NewConfig("../config.yaml")
 	assert.Nil(t, err)
-	db := InitNodeDb(config.Mysql.Dsn)
+	db := InitNodeDb(config.Postgresql.Dsn)
 	assert.NotNil(t, db)
 	key := crypto.GenerateKeyPair(1)
 	assert.Nil(t, err)
@@ -39,7 +39,7 @@ func TestAddNode(t *testing.T) {
 func TestDeleteNode(t *testing.T) {
 	config, err := utils.NewConfig("../config.yaml")
 	assert.Nil(t, err)
-	db := InitNodeDb(config.Mysql.Dsn)
+	db := InitNodeDb(config.Postgresql.Dsn)
 	assert.NotNil(t, db)
 	assert.Nil(t, db.DeleteNode(1))
 }
@@ -47,7 +47,7 @@ func TestDeleteNode(t *testing.T) {
 func TestSearchNode(t *testing.T) {
 	config, err := utils.NewConfig("../config.yaml")
 	assert.Nil(t, err)
-	db := InitNodeDb(config.Mysql.Dsn)
+	db := InitNodeDb(config.Postgresql.Dsn)
 	assert.NotNil(t, db)
 	node, err := db.SearchNodeById(1)
 	assert.Nil(t, err)
@@ -57,7 +57,7 @@ func TestSearchNode(t *testing.T) {
 func TestCompareByteInDb(t *testing.T) {
 	config, err := utils.NewConfig("../config.yaml")
 	assert.Nil(t, err)
-	db := InitNodeDb(config.Mysql.Dsn)
+	db := InitNodeDb(config.Postgresql.Dsn)
 	assert.NotNil(t, db)
 	key := crypto.GenerateKeyPair(1)
 	assert.Nil(t, err)
