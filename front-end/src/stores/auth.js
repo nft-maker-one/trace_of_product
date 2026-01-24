@@ -36,7 +36,7 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.setItem('user', JSON.stringify(userData))
   }
 
-  function clearAuth() {
+  function clearAuth(shouldRedirect = false) {
     token.value = ''
     user.value = null
     error.value = null
@@ -45,8 +45,10 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.removeItem('rememberUser')
     localStorage.removeItem('username')
 
-    // 重定向到登录页
-    router.push('/login')
+    // 只有在明确需要重定向时才跳转（如用户点击登出）
+    if (shouldRedirect) {
+      router.push('/login')
+    }
   }
 
   async function login(username, password) {

@@ -1,6 +1,9 @@
 networks:
   blockchain_network:
     driver: bridge
+  control_network:
+    external: true
+    name: control_system_control_network
 
 volumes:
   mysql_data:
@@ -55,6 +58,7 @@ services:
         condition: service_healthy
     networks:
       - blockchain_network
+      - control_network
     restart: unless-stopped
     volumes:
       - ./config.yaml:/app/config.yaml
@@ -84,6 +88,7 @@ services:
         condition: service_healthy
     networks:
       - blockchain_network
+      - control_network
     restart: unless-stopped
     volumes:
       - ./config.yaml:/app/config.yaml
@@ -113,6 +118,7 @@ services:
         condition: service_healthy
     networks:
       - blockchain_network
+      - control_network
     restart: unless-stopped
     volumes:
       - ./config.yaml:/app/config.yaml
@@ -142,6 +148,7 @@ services:
         condition: service_healthy
     networks:
       - blockchain_network
+      - control_network
     restart: unless-stopped
     volumes:
       - ./config.yaml:/app/config.yaml

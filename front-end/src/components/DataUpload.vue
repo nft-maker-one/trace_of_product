@@ -12,42 +12,227 @@
         </div>
       </div>
 
+      <!-- eggplant ID 单独一行 -->
       <div class="form-row">
         <div class="form-col">
-          <!-- 表单字段 -->
-          <div class="form-group" v-for="field in formFields.left" :key="field.id">
-            <label class="form-label" :for="field.id">
-              <i :class="field.icon"></i>
-              {{ field.label }} <span v-if="field.required">*</span>
+          <div class="form-group">
+            <label class="form-label" for="upload-eggplant-id">
+              <i class="fas fa-fingerprint"></i>
+              {{ t('dataUpload.eggplantId') }} <span>*</span>
             </label>
             <input
-              :type="field.type"
-              :id="field.id"
-              v-model="formData[field.name]"
+              type="text"
+              id="upload-eggplant-id"
+              v-model="formData.eggplant_id"
               class="form-control"
-              :placeholder="field.placeholder"
+              :placeholder="t('dataUpload.enterProductId')"
             >
           </div>
         </div>
+        <div class="form-col"></div>
+      </div>
 
+      <!-- 产品高度 + 产品哈希 -->
+      <div class="form-row">
         <div class="form-col">
-          <!-- 右侧表单字段 -->
-          <div class="form-group" v-for="field in formFields.right" :key="field.id">
-            <label class="form-label" :for="field.id">
-              <i :class="field.icon"></i>
-              {{ field.label }} <span v-if="field.required">*</span>
+          <div class="form-group">
+            <label class="form-label" for="upload-product-height">
+              <i class="fas fa-seedling"></i>
+              {{ t('dataUpload.productHeight') }}
             </label>
             <input
-              :type="field.type"
-              :id="field.id"
-              v-model="formData[field.name]"
+              type="number"
+              id="upload-product-height"
+              v-model="formData.product_height"
               class="form-control"
-              :placeholder="field.placeholder"
+              :placeholder="t('dataUpload.productHeight')"
             >
+          </div>
+        </div>
+        <div class="form-col">
+          <div class="form-group">
+            <label class="form-label" for="upload-product-hash">
+              <i class="fas fa-hashtag"></i>
+              {{ t('dataUpload.productHash') }} <span>*</span>
+            </label>
+            <div class="input-with-button">
+              <input
+                type="text"
+                id="upload-product-hash"
+                v-model="formData.product_hash"
+                class="form-control hash-readonly"
+                :placeholder="t('dataUpload.productHash')"
+                readonly
+              >
+              <button type="button" class="btn btn-generate" @click="generateHashForField('product_hash')" :title="t('dataUpload.generateHash')">
+                <i class="fas fa-random"></i>
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
+      <!-- 运输高度 + 运输哈希 -->
+      <div class="form-row">
+        <div class="form-col">
+          <div class="form-group">
+            <label class="form-label" for="upload-transport-height">
+              <i class="fas fa-truck"></i>
+              {{ t('dataUpload.transportHeight') }}
+            </label>
+            <input
+              type="number"
+              id="upload-transport-height"
+              v-model="formData.transport_height"
+              class="form-control"
+              :placeholder="t('dataUpload.transportHeight')"
+            >
+          </div>
+        </div>
+        <div class="form-col">
+          <div class="form-group">
+            <label class="form-label" for="upload-transport-hash">
+              <i class="fas fa-hashtag"></i>
+              {{ t('dataUpload.transportHash') }} <span>*</span>
+            </label>
+            <div class="input-with-button">
+              <input
+                type="text"
+                id="upload-transport-hash"
+                v-model="formData.transport_hash"
+                class="form-control hash-readonly"
+                :placeholder="t('dataUpload.transportHash')"
+                readonly
+              >
+              <button type="button" class="btn btn-generate" @click="generateHashForField('transport_hash')" :title="t('dataUpload.generateHash')">
+                <i class="fas fa-random"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 加工高度 + 加工哈希 -->
+      <div class="form-row">
+        <div class="form-col">
+          <div class="form-group">
+            <label class="form-label" for="upload-process-height">
+              <i class="fas fa-industry"></i>
+              {{ t('dataUpload.processHeight') }}
+            </label>
+            <input
+              type="number"
+              id="upload-process-height"
+              v-model="formData.process_height"
+              class="form-control"
+              :placeholder="t('dataUpload.processHeight')"
+            >
+          </div>
+        </div>
+        <div class="form-col">
+          <div class="form-group">
+            <label class="form-label" for="upload-process-hash">
+              <i class="fas fa-hashtag"></i>
+              {{ t('dataUpload.processHash') }} <span>*</span>
+            </label>
+            <div class="input-with-button">
+              <input
+                type="text"
+                id="upload-process-hash"
+                v-model="formData.process_hash"
+                class="form-control hash-readonly"
+                :placeholder="t('dataUpload.processHash')"
+                readonly
+              >
+              <button type="button" class="btn btn-generate" @click="generateHashForField('process_hash')" :title="t('dataUpload.generateHash')">
+                <i class="fas fa-random"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 存储高度 + 存储哈希 -->
+      <div class="form-row">
+        <div class="form-col">
+          <div class="form-group">
+            <label class="form-label" for="upload-storage-height">
+              <i class="fas fa-warehouse"></i>
+              {{ t('dataUpload.storageHeight') }}
+            </label>
+            <input
+              type="number"
+              id="upload-storage-height"
+              v-model="formData.storage_height"
+              class="form-control"
+              :placeholder="t('dataUpload.storageHeight')"
+            >
+          </div>
+        </div>
+        <div class="form-col">
+          <div class="form-group">
+            <label class="form-label" for="upload-storage-hash">
+              <i class="fas fa-hashtag"></i>
+              {{ t('dataUpload.storageHash') }} <span>*</span>
+            </label>
+            <div class="input-with-button">
+              <input
+                type="text"
+                id="upload-storage-hash"
+                v-model="formData.storage_hash"
+                class="form-control hash-readonly"
+                :placeholder="t('dataUpload.storageHash')"
+                readonly
+              >
+              <button type="button" class="btn btn-generate" @click="generateHashForField('storage_hash')" :title="t('dataUpload.generateHash')">
+                <i class="fas fa-random"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 销售高度 + 销售哈希 -->
+      <div class="form-row">
+        <div class="form-col">
+          <div class="form-group">
+            <label class="form-label" for="upload-sell-height">
+              <i class="fas fa-shopping-cart"></i>
+              {{ t('dataUpload.sellHeight') }}
+            </label>
+            <input
+              type="number"
+              id="upload-sell-height"
+              v-model="formData.sell_height"
+              class="form-control"
+              :placeholder="t('dataUpload.sellHeight')"
+            >
+          </div>
+        </div>
+        <div class="form-col">
+          <div class="form-group">
+            <label class="form-label" for="upload-sell-hash">
+              <i class="fas fa-hashtag"></i>
+              {{ t('dataUpload.sellHash') }} <span>*</span>
+            </label>
+            <div class="input-with-button">
+              <input
+                type="text"
+                id="upload-sell-hash"
+                v-model="formData.sell_hash"
+                class="form-control hash-readonly"
+                :placeholder="t('dataUpload.sellHash')"
+                readonly
+              >
+              <button type="button" class="btn btn-generate" @click="generateHashForField('sell_hash')" :title="t('dataUpload.generateHash')">
+                <i class="fas fa-random"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 节点选择 + 上传按钮 -->
       <div class="form-row">
         <div class="form-col">
           <div class="select-wrapper">
@@ -136,7 +321,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import api from '../services/api'
 
@@ -147,6 +332,54 @@ const loadingNodes = ref(false)
 const uploading = ref(false)
 const selectedNode = ref('')
 const nodes = ref([])
+
+// 简单的哈希函数：将字符串转换为64位十六进制数（模拟SHA-256）
+async function sha256(message) {
+  // 使用 Web Crypto API 进行真正的 SHA-256 哈希
+  const msgBuffer = new TextEncoder().encode(message)
+  const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer)
+  const hashArray = Array.from(new Uint8Array(hashBuffer))
+  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+  return hashHex // 返回64位十六进制字符串
+}
+
+// 根据高度值生成哈希（加入随机因素，相同输入产生不同输出）
+async function generateHashFromHeight(height) {
+  if (!height && height !== 0) return ''
+  
+  const heightNum = parseInt(height) || 0
+  // 在高度值基础上加入时间戳和随机数，确保每次生成不同的哈希
+  const randomSalt = Date.now().toString() + Math.random().toString(36).substring(2)
+  const dataToHash = heightNum.toString() + '_' + randomSalt
+  
+  // 使用 SHA-256 对组合数据进行哈希，生成64位十六进制数
+  const hash = await sha256(dataToHash)
+  return hash
+}
+
+// 生成64位16进制随机哈希值（保留用于其他用途）
+function generateRandomHash() {
+  const hexChars = '0123456789abcdef'
+  let hash = ''
+  for (let i = 0; i < 64; i++) {
+    hash += hexChars[Math.floor(Math.random() * 16)]
+  }
+  return hash
+}
+
+// 为指定字段生成哈希值（现在从对应的高度字段生成）
+async function generateHashForField(fieldName) {
+  // 获取对应的高度字段名
+  const heightFieldName = fieldName.replace('_hash', '_height')
+  const heightValue = formData[heightFieldName]
+  
+  if (heightValue || heightValue === 0) {
+    formData[fieldName] = await generateHashFromHeight(heightValue)
+  } else {
+    // 如果没有高度值，生成随机哈希
+    formData[fieldName] = generateRandomHash()
+  }
+}
 
 const formData = reactive({
   eggplant_id: '',
@@ -162,29 +395,44 @@ const formData = reactive({
   sell_hash: ''
 })
 
+// 监听高度值变化，自动生成对应的哈希
+watch(() => formData.product_height, async (newVal) => {
+  if (newVal || newVal === 0) {
+    formData.product_hash = await generateHashFromHeight(newVal)
+  }
+})
+
+watch(() => formData.transport_height, async (newVal) => {
+  if (newVal || newVal === 0) {
+    formData.transport_hash = await generateHashFromHeight(newVal)
+  }
+})
+
+watch(() => formData.process_height, async (newVal) => {
+  if (newVal || newVal === 0) {
+    formData.process_hash = await generateHashFromHeight(newVal)
+  }
+})
+
+watch(() => formData.storage_height, async (newVal) => {
+  if (newVal || newVal === 0) {
+    formData.storage_hash = await generateHashFromHeight(newVal)
+  }
+})
+
+watch(() => formData.sell_height, async (newVal) => {
+  if (newVal || newVal === 0) {
+    formData.sell_hash = await generateHashFromHeight(newVal)
+  }
+})
+
 const uploadResult = reactive({
   message: '',
   type: '',
   icon: ''
 })
 
-const formFields = {
-  left: [
-    { id: 'upload-eggplant-id', name: 'eggplant_id', label: t('dataUpload.eggplantId'), icon: 'fas fa-fingerprint', type: 'text', required: true, placeholder: t('dataUpload.enterProductId') },
-    { id: 'upload-product-height', name: 'product_height', label: t('dataUpload.productHeight'), icon: 'fas fa-ruler-vertical', type: 'number', required: false, placeholder: t('dataUpload.productHeight') },
-    { id: 'upload-product-hash', name: 'product_hash', label: t('dataUpload.productHash'), icon: 'fas fa-hashtag', type: 'text', required: true, placeholder: t('dataUpload.productHash') },
-    { id: 'upload-transport-height', name: 'transport_height', label: t('dataUpload.transportHeight'), icon: 'fas fa-truck', type: 'number', required: false, placeholder: t('dataUpload.transportHeight') },
-    { id: 'upload-transport-hash', name: 'transport_hash', label: t('dataUpload.transportHash'), icon: 'fas fa-hashtag', type: 'text', required: true, placeholder: t('dataUpload.transportHash') }
-  ],
-  right: [
-    { id: 'upload-process-height', name: 'process_height', label: t('dataUpload.processHeight'), icon: 'fas fa-industry', type: 'number', required: false, placeholder: t('dataUpload.processHeight') },
-    { id: 'upload-process-hash', name: 'process_hash', label: t('dataUpload.processHash'), icon: 'fas fa-hashtag', type: 'text', required: true, placeholder: t('dataUpload.processHash') },
-    { id: 'upload-storage-height', name: 'storage_height', label: t('dataUpload.storageHeight'), icon: 'fas fa-warehouse', type: 'number', required: false, placeholder: t('dataUpload.storageHeight') },
-    { id: 'upload-storage-hash', name: 'storage_hash', label: t('dataUpload.storageHash'), icon: 'fas fa-hashtag', type: 'text', required: true, placeholder: t('dataUpload.storageHash') },
-    { id: 'upload-sell-height', name: 'sell_height', label: t('dataUpload.sellHeight'), icon: 'fas fa-shopping-cart', type: 'number', required: false, placeholder: t('dataUpload.sellHeight') },
-    { id: 'upload-sell-hash', name: 'sell_hash', label: t('dataUpload.sellHash'), icon: 'fas fa-hashtag', type: 'text', required: true, placeholder: t('dataUpload.sellHash') }
-  ]
-}
+// formFields 已不再使用，表单字段现在直接在模板中定义
 
 async function toggleNodeList() {
   showNodeList.value = !showNodeList.value
@@ -238,7 +486,6 @@ async function handleUpload() {
       sell_height: parseInt(formData.sell_height) || 0,
       node_ip: selectedNodeObj.addr
     }
-
     const response = await api.uploadData(uploadData)
 
     if (response.status === 'ok' && response.msg === '上传成功') {
@@ -329,8 +576,8 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 30px;
-  padding-bottom: 20px;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
   border-bottom: 1px solid var(--light-gray);
 }
 
@@ -352,8 +599,8 @@ onMounted(() => {
 /* 表单样式优化 */
 .form-row {
   display: flex;
-  gap: 30px;
-  margin-bottom: 30px;
+  gap: 20px;
+  margin-bottom: 16px;
   flex-wrap: wrap;
 }
 
@@ -363,17 +610,17 @@ onMounted(() => {
 }
 
 .form-group {
-  margin-bottom: 24px;
+  margin-bottom: 12px;
 }
 
 .form-label {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 10px;
+  gap: 8px;
+  margin-bottom: 6px;
   font-weight: 600;
   color: var(--dark);
-  font-size: 15px;
+  font-size: 14px;
 }
 
 .form-label i {
@@ -387,10 +634,10 @@ onMounted(() => {
 
 .form-control {
   width: 100%;
-  padding: 14px 16px;
+  padding: 10px 14px;
   border: 2px solid var(--light-gray);
-  border-radius: 10px;
-  font-size: 15px;
+  border-radius: 8px;
+  font-size: 14px;
   transition: var(--transition);
   background-color: white;
   color: var(--dark);
@@ -405,6 +652,56 @@ onMounted(() => {
 .form-control::placeholder {
   color: var(--gray);
   opacity: 0.7;
+}
+
+/* 输入框带按钮样式 */
+.input-with-button {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.input-with-button .form-control {
+  flex: 1;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.btn-generate {
+  padding: 14px 16px;
+  background: linear-gradient(135deg, var(--secondary) 0%, var(--secondary-dark) 100%);
+  color: white;
+  border: none;
+  border-radius: 0 10px 10px 0;
+  cursor: pointer;
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 50px;
+}
+
+.btn-generate:hover {
+  background: linear-gradient(135deg, var(--secondary-dark) 0%, var(--secondary) 100%);
+  transform: scale(1.02);
+}
+
+.btn-generate i {
+  font-size: 16px;
+}
+
+/* 只读哈希输入框样式 */
+.hash-readonly {
+  background-color: #f5f5f5 !important;
+  color: #666 !important;
+  cursor: not-allowed;
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+}
+
+.hash-readonly:focus {
+  border-color: var(--light-gray) !important;
+  box-shadow: none !important;
 }
 
 /* 选择框样式优化 */

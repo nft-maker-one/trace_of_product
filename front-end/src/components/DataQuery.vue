@@ -54,6 +54,27 @@
         </div>
       </div>
 
+      <!-- 最近查询节点 -->
+      <div v-if="recentQueryNodes.length > 0" class="recent-nodes">
+        <h4 class="history-title">
+          <i class="fas fa-server"></i>
+          {{ t('dataQuery.recentNodes') || '最近查询节点' }}
+        </h4>
+        <div class="recent-nodes-list">
+          <div
+            v-for="(rnode, index) in recentQueryNodes"
+            :key="rnode.id"
+            class="recent-node-item"
+            :class="{ active: selectedNode === rnode.id }"
+            @click="selectedNode = rnode.id"
+          >
+            <span class="node-rank">#{{ index + 1 }}</span>
+            <span class="node-id">{{ rnode.id }}</span>
+            <span class="node-time">{{ rnode.time }}</span>
+          </div>
+        </div>
+      </div>
+
       <!-- 查询历史 -->
       <div v-if="queryHistory.length > 0" class="query-history">
         <h4 class="history-title">
@@ -238,11 +259,51 @@ const queryTime = ref('')
 const showNoResult = ref(false)
 
 // 查询历史
-const queryHistory = ref([
-  { id: 'EG20231015001', time: '2023-10-15 10:30' },
-  { id: 'EG20231014045', time: '2023-10-14 15:45' },
-  { id: 'EG20231013022', time: '2023-10-13 09:20' }
-])
+const queryHistory = ref([])
+
+// 最近三次查询使用的节点
+const recentQueryNodes = ref([])
+
+// 从 localStorage 加载最近查询节点
+function loadRecentNodes() {
+  try {
+    const saved = localStorage.getItem('recentQueryNodes')
+    if (saved) {
+      recentQueryNodes.value = JSON.parse(saved)
+    }
+  } catch (e) {
+    console.error('加载最近查询节点失败:', e)
+  }
+}
+
+// 保存最近查询节点到 localStorage
+function saveRecentNodes() {
+  try {
+    localStorage.setItem('recentQueryNodes', JSON.stringify(recentQueryNodes.value))
+  } catch (e) {
+    console.error('保存最近查询节点失败:', e)
+  }
+}
+
+// 添加节点到最近查询记录
+function addToRecentNodes(nodeId, nodeAddr) {
+  // 移除已存在的相同节点
+  recentQueryNodes.value = recentQueryNodes.value.filter(n => n.id !== nodeId)
+  
+  // 添加到最前面
+  recentQueryNodes.value.unshift({
+    id: nodeId,
+    addr: nodeAddr,
+    time: new Date().toLocaleString('zh-CN', { hour12: false })
+  })
+  
+  // 只保留最近3个
+  if (recentQueryNodes.value.length > 3) {
+    recentQueryNodes.value = recentQueryNodes.value.slice(0, 3)
+  }
+  
+  saveRecentNodes()
+}
 
 // 产品阶段定义
 const productStages = [
@@ -378,6 +439,9 @@ async function handleQuery() {
 
       // 添加到查询历史
       addToHistory(queryId.value)
+      
+      // 记录使用的查询节点
+      addToRecentNodes(node.id, node.addr)
     } else {
       showNoResult.value = true
     }
@@ -496,6 +560,7 @@ async function loadNodes() {
 
 onMounted(() => {
   loadNodes()
+  loadRecentNodes()
 })
 </script>
 
@@ -728,10 +793,72 @@ onMounted(() => {
   color: white;
 }
 
+/* 最近查询节点 */
+.recent-nodes {
+  margin-top: 20px;
+  padding: 15px;
+  background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+  border-radius: 12px;
+  border: 1px solid #90caf9;
+}
+
+.recent-nodes-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.recent-node-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 15px;
+  background: white;
+  border: 2px solid #90caf9;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.recent-node-item:hover {
+  background: #e3f2fd;
+  border-color: #2196f3;
+}
+
+.recent-node-item.active {
+  background: #2196f3;
+  border-color: #1976d2;
+  color: white;
+}
+
+.recent-node-item.active .node-time {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.node-rank {
+  font-weight: 700;
+  color: #1976d2;
+  font-size: 12px;
+}
+
+.recent-node-item.active .node-rank {
+  color: white;
+}
+
+.node-id {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.node-time {
+  font-size: 12px;
+  color: #666;
+}
+
 /* 查询历史 */
 .query-history {
-  margin-top: 30px;
-  padding: 20px;
+  margin-top: 20px;
+  padding: 15px;
   background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
   border-radius: 12px;
   border: 1px solid var(--border-color);

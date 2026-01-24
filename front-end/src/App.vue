@@ -5,18 +5,8 @@
 </template>
 
 <script setup>
-import { onMounted } from 'vue'
-import { useAuthStore } from './stores/auth'
-
-const authStore = useAuthStore()
-
-onMounted(() => {
-  // 检查用户是否已登录
-  const token = localStorage.getItem('token')
-  if (token) {
-    authStore.checkAuth()
-  }
-})
+// App.vue 不再自动检查认证
+// 认证检查将在路由守卫中按需进行
 </script>
 
 <style>

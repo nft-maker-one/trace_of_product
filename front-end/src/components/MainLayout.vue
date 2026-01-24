@@ -8,7 +8,7 @@
 
     <!-- 侧边栏 -->
     <div class="sidebar" :class="{ 'active': mobileMenuOpen }">
-      <div class="logo">
+      <div class="logo" @click="goToExplorer" style="cursor: pointer;">
         <i class="fas fa-seedling"></i>
         <h1>{{ t('layout.systemName') }}</h1>
       </div>
@@ -71,13 +71,14 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useI18nStore } from '../stores/i18n'
 import LanguageSelector from './LanguageSelector.vue'
 import { useI18n } from 'vue-i18n'
 
 const route = useRoute()
+const router = useRouter()
 const authStore = useAuthStore()
 const i18nStore = useI18nStore()
 const { t } = useI18n()
@@ -90,8 +91,7 @@ const menuItems = computed(() => [
   { id: 'personal-center', name: t('layout.personalCenter'), path: '/dashboard#personal-center', icon: 'fas fa-user-circle' },
   { id: 'data-upload', name: t('layout.dataUpload'), path: '/dashboard#data-upload', icon: 'fas fa-upload' },
   { id: 'data-query', name: t('layout.dataQuery'), path: '/dashboard#data-query', icon: 'fas fa-search' },
-  { id: 'node-management', name: t('layout.nodeManagement'), path: '/dashboard#node-management', icon: 'fas fa-server' },
-  { id: 'log-monitor', name: t('layout.logMonitor'), path: '/dashboard#log-monitor', icon: 'fas fa-list-alt' }
+  { id: 'node-management', name: t('layout.nodeManagement'), path: '/dashboard#node-management', icon: 'fas fa-server' }
 ])
 
 const pageTitle = computed(() => {
@@ -128,6 +128,10 @@ function isActive(menuId) {
   return currentTab === menuId
 }
 
+function goToExplorer() {
+  router.push('/explorer')
+}
+
 function toggleMobileMenu() {
   mobileMenuOpen.value = !mobileMenuOpen.value
 }
@@ -144,7 +148,7 @@ function closeMobileMenuOnClick() {
 
 function handleLogout() {
   if (confirm(t('common.confirm') + t('layout.logout') + '？')) {
-    authStore.clearAuth()
+    authStore.clearAuth(true)
     // TODO: 更新数据库上一次的登录时间
   }
 }

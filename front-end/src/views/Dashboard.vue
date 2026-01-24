@@ -6,7 +6,6 @@
       <DataUpload v-else-if="currentTab === 'data-upload'" />
       <DataQuery v-else-if="currentTab === 'data-query'" />
       <NodeManagement v-else-if="currentTab === 'node-management'" />
-      <LogMonitor v-else-if="currentTab === 'log-monitor'" />
     </template>
   </MainLayout>
 </template>
@@ -19,7 +18,6 @@ import PersonalCenter from '../components/PersonalCenter.vue'
 import DataUpload from '../components/DataUpload.vue'
 import DataQuery from '../components/DataQuery.vue'
 import NodeManagement from '../components/NodeManagement.vue'
-import LogMonitor from '../components/LogMonitor.vue'
 
 const route = useRoute()
 const router = useRouter()

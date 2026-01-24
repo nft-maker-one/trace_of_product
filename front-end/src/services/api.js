@@ -34,11 +34,9 @@ api.interceptors.response.use(
       // 服务器返回错误状态码
       switch (error.response.status) {
         case 401:
-          // 未授权，清除令牌并跳转到登录页
+          // 未授权 - 不在这里处理跳转，让路由守卫处理
+          // 只清除无效的 token
           localStorage.removeItem('token')
-          if (window.location.pathname !== '/login') {
-            window.location.href = '/login'
-          }
           break
         case 403:
           console.error('访问被拒绝')

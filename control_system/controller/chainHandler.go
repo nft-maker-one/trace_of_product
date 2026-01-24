@@ -152,7 +152,7 @@ func (c *ChainModel) SendMessage(ctx *gin.Context) {
 	req := models.ClientRequest{}
 	req.Header = "Search"
 	req.Content = []byte(id)
-	req.RespAddr = "http://localhost:8081/meta_data"
+	req.RespAddr = "http://control_system:8080/meta_data"
 	reqByte, err := json.Marshal(req)
 	if err != nil {
 		utils.LogMsg([]string{"SendMessage"}, []string{"clientRequest encode failed err =" + err.Error()})
