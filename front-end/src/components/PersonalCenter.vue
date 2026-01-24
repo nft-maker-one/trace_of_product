@@ -266,7 +266,7 @@ const systemStatus = reactive({
   todayQueries: 45,
   apiResponse: 156,
   version: '1.0.0',
-  lastUpdate: '2023-10-15 14:30:00',
+  lastUpdate: '2026-01-24 14:30:00',
   storageUsage: 65,
   cpuUsage: 42,
   memoryUsage: 78,
@@ -289,7 +289,7 @@ const activityLogs = ref([
     type: 'upload',
     icon: 'fas fa-upload',
     title: t('personalCenter.dataUpload'),
-    description: t('personalCenter.uploadProductData') + ' (ID: EG20231015001)',
+    description: t('personalCenter.uploadProductData') + ' (ID: EG20260124001)',
     time: '10' + t('common.minutesAgo')
   },
   {
@@ -297,7 +297,7 @@ const activityLogs = ref([
     type: 'query',
     icon: 'fas fa-search',
     title: t('personalCenter.dataQuery'),
-    description: t('personalCenter.queryProductInfo') + ' (ID: EG20231014045)',
+    description: t('personalCenter.queryProductInfo') + ' (ID: EG20260123045)',
     time: '30' + t('common.minutesAgo')
   },
   {

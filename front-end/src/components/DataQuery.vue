@@ -223,6 +223,12 @@
               <div class="verification-label">{{ t('dataQuery.timestampLabel') }}:</div>
               <div class="verification-value">{{ queryResult.timestamp || 'N/A' }}</div>
             </div>
+            <div class="verification-item full-width">
+              <button class="btn btn-consensus" @click="showPBFTConfirmation = true">
+                <i class="fas fa-network-wired"></i>
+                {{ t('pbft.viewConsensus') }}
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -240,6 +246,14 @@
         </button>
       </div>
     </div>
+
+    <!-- PBFT 共识确认弹窗 -->
+    <PBFTConfirmation
+      :visible="showPBFTConfirmation"
+      :transactionData="pbftTransactionData"
+      :nodes="nodes"
+      @close="showPBFTConfirmation = false"
+    />
   </div>
 </template>
 
@@ -247,6 +261,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import api from '../services/api'
+import PBFTConfirmation from './PBFTConfirmation.vue'
 
 const { t } = useI18n()
 
@@ -257,6 +272,10 @@ const querying = ref(false)
 const queryResult = ref(null)
 const queryTime = ref('')
 const showNoResult = ref(false)
+
+// PBFT 确认弹窗
+const showPBFTConfirmation = ref(false)
+const pbftTransactionData = ref(null)
 
 // 查询历史
 const queryHistory = ref([])
@@ -431,7 +450,15 @@ async function handleQuery() {
         tx_hash: data.tx_hash,
         timestamp: data.timestamp,
         verified: true,
-        is_complete: true
+        is_complete: true,
+        public_key: data.public_key || data.PublickKey || ''
+      }
+
+      // 设置 PBFT 交易数据（用于共识过程展示）
+      pbftTransactionData.value = {
+        eggplant_id: queryId.value,
+        public_key: data.public_key || data.PublickKey || '',
+        node_id: data.node_id || data.NodeId || ''
       }
 
       // 记录查询时间
@@ -791,6 +818,26 @@ onMounted(() => {
 .btn-outline:hover {
   background: var(--primary);
   color: white;
+}
+
+/* PBFT 共识按钮 */
+.btn-consensus {
+  background: linear-gradient(135deg, #1565c0 0%, #0d47a1 100%);
+  color: white;
+  box-shadow: 0 4px 15px rgba(21, 101, 192, 0.3);
+  width: 100%;
+  justify-content: center;
+}
+
+.btn-consensus:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(21, 101, 192, 0.4);
+  background: linear-gradient(135deg, #0d47a1 0%, #1a237e 100%);
+}
+
+.verification-item.full-width {
+  grid-column: 1 / -1;
+  margin-top: 12px;
 }
 
 /* 最近查询节点 */

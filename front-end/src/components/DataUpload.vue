@@ -12,7 +12,7 @@
         </div>
       </div>
 
-      <!-- eggplant ID 单独一行 -->
+      <!-- 茄子ID + 选择上传节点 -->
       <div class="form-row">
         <div class="form-col">
           <div class="form-group">
@@ -29,7 +29,20 @@
             >
           </div>
         </div>
-        <div class="form-col"></div>
+        <div class="form-col">
+          <div class="select-wrapper">
+            <label class="form-label" for="select-node">
+              <i class="fas fa-server"></i>
+              {{ t('dataUpload.selectUploadNode') }} *
+            </label>
+            <select id="select-node" v-model="selectedNode">
+              <option value="">{{ t('dataUpload.selectNode') }}</option>
+              <option v-for="node in nodes" :key="node.id" :value="node.id">
+                {{ node.id }}
+              </option>
+            </select>
+          </div>
+        </div>
       </div>
 
       <!-- 产品高度 + 产品哈希 -->
@@ -232,29 +245,13 @@
         </div>
       </div>
 
-      <!-- 节点选择 + 上传按钮 -->
-      <div class="form-row">
-        <div class="form-col">
-          <div class="select-wrapper">
-            <label class="form-label" for="select-node">
-              <i class="fas fa-server"></i>
-              {{ t('dataUpload.selectUploadNode') }} *
-            </label>
-            <select id="select-node" v-model="selectedNode">
-              <option value="">{{ t('dataUpload.selectNode') }}</option>
-              <option v-for="node in nodes" :key="node.id" :value="node.id">
-                {{ node.id }}
-              </option>
-            </select>
-          </div>
-        </div>
-        <div class="form-col">
-          <button class="btn btn-primary" @click="handleUpload" :disabled="uploading" style="margin-top: 28px; width: 100%;">
-            <i class="fas fa-cloud-upload-alt"></i>
-            {{ uploading ? t('dataUpload.uploading') : t('dataUpload.uploadData') }}
-            <div v-if="uploading" class="spinner"></div>
-          </button>
-        </div>
+      <!-- 上传按钮 -->
+      <div class="form-row upload-btn-row">
+        <button class="btn btn-primary btn-upload" @click="handleUpload" :disabled="uploading">
+          <i class="fas fa-cloud-upload-alt"></i>
+          {{ uploading ? t('dataUpload.uploading') : t('dataUpload.uploadData') }}
+          <div v-if="uploading" class="spinner"></div>
+        </button>
       </div>
 
       <div v-if="uploadResult.message" :class="['alert', uploadResult.type]">
@@ -317,6 +314,17 @@
         </table>
       </div>
     </div>
+
+    <!-- 共识过程弹窗 -->
+    <ConsensusProgress
+      :visible="showConsensus"
+      :uploadData="consensusUploadData"
+      :uploadNode="consensusUploadNode"
+      :allNodes="nodes"
+      :uploadStatus="consensusStatus"
+      @close="handleConsensusClose"
+      @completed="handleConsensusCompleted"
+    />
   </div>
 </template>
 
@@ -324,10 +332,17 @@
 import { ref, reactive, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import api from '../services/api'
+import ConsensusProgress from './ConsensusProgress.vue'
 
 const { t } = useI18n()
 
 const showNodeList = ref(false)
+
+// 共识进度弹窗相关
+const showConsensus = ref(false)
+const consensusUploadData = ref(null)
+const consensusUploadNode = ref(null)
+const consensusStatus = ref('pending')
 const loadingNodes = ref(false)
 const uploading = ref(false)
 const selectedNode = ref('')
@@ -486,22 +501,50 @@ async function handleUpload() {
       sell_height: parseInt(formData.sell_height) || 0,
       node_ip: selectedNodeObj.addr
     }
+
+    // 显示共识进度弹窗
+    consensusUploadData.value = uploadData
+    consensusUploadNode.value = selectedNodeObj
+    consensusStatus.value = 'uploading'
+    showConsensus.value = true
+
     const response = await api.uploadData(uploadData)
 
     if (response.status === 'ok' && response.msg === '上传成功') {
-      showUploadResult(t('dataUpload.uploadSuccess'), 'success', 'fas fa-check-circle')
-      // 清空表单
-      Object.keys(formData).forEach(key => {
-        formData[key] = ''
-      })
+      consensusStatus.value = 'success'
+      // 不立即显示结果，等共识动画完成后再处理
+      pendingUploadSuccess.value = true
     } else {
+      consensusStatus.value = 'error'
       showUploadResult(response.msg || t('dataUpload.uploadFailed'), 'warning', 'fas fa-exclamation-triangle')
     }
   } catch (error) {
     console.error('上传失败:', error)
+    consensusStatus.value = 'error'
     showUploadResult(t('dataUpload.uploadFailedWithError', { error: error.message }), 'error', 'fas fa-times-circle')
   } finally {
     uploading.value = false
+  }
+}
+
+// 共识完成回调
+const pendingUploadSuccess = ref(false)
+
+function handleConsensusCompleted() {
+  // 共识动画完成
+}
+
+function handleConsensusClose() {
+  showConsensus.value = false
+  
+  // 如果上传成功，显示成功消息并清空表单
+  if (pendingUploadSuccess.value) {
+    showUploadResult(t('dataUpload.uploadSuccess'), 'success', 'fas fa-check-circle')
+    // 清空表单
+    Object.keys(formData).forEach(key => {
+      formData[key] = ''
+    })
+    pendingUploadSuccess.value = false
   }
 }
 
@@ -704,17 +747,17 @@ onMounted(() => {
   box-shadow: none !important;
 }
 
-/* 选择框样式优化 */
+/* 选择框样式优化 - 与输入框保持一致 */
 .select-wrapper {
-  margin-bottom: 20px;
+  margin-bottom: 0;
 }
 
 .select-wrapper select {
   width: 100%;
-  padding: 14px 16px;
+  padding: 10px 14px;
   border: 2px solid var(--light-gray);
-  border-radius: 10px;
-  font-size: 15px;
+  border-radius: 8px;
+  font-size: 14px;
   background-color: white;
   color: var(--dark);
   cursor: pointer;
@@ -722,9 +765,10 @@ onMounted(() => {
   appearance: none;
   background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
   background-repeat: no-repeat;
-  background-position: right 16px center;
-  background-size: 16px;
-  padding-right: 45px;
+  background-position: right 12px center;
+  background-size: 14px;
+  padding-right: 40px;
+  height: 42px;
 }
 
 .select-wrapper select:focus {
@@ -762,6 +806,18 @@ onMounted(() => {
 .btn-primary:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+/* 上传按钮居中 */
+.upload-btn-row {
+  justify-content: center;
+  margin-top: 10px;
+}
+
+.btn-upload {
+  min-width: 600px;
+  padding: 16px 50px;
+  font-size: 18px;
 }
 
 .btn-outline {
