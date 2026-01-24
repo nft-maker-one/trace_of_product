@@ -99,7 +99,7 @@ func main() {
 	// 	"status": "error",
 	// 	"msg": "获取节点错误：..."
 	//   }
-	engine.GET("/nodes", AuthHandler.VerifyMiddleWare, ChainHandler.GetNodes)
+	engine.GET("/nodes", ChainHandler.GetNodes)
 
 	// 测试节点连接状态
 	// 请求参数
@@ -119,7 +119,7 @@ func main() {
 	// 	"response_time": -1,
 	// 	"online": false
 	// }
-	engine.GET("/node/ping", AuthHandler.VerifyMiddleWare, ChainHandler.PingNode)
+	engine.GET("/node/ping", ChainHandler.PingNode)
 
 	// 根据农产品ID查询区块链中的农产品追溯信息
 	// 请求参数
@@ -148,10 +148,10 @@ func main() {
 	engine.GET("/menu", AuthHandler.VerifyMiddleWare, AuthHandler.Menu)
 
 	// 区块链节点相关接口
-	engine.GET("/blockchain/nodes", AuthHandler.VerifyMiddleWare, ChainHandler.GetBlockchainNodes)
-	engine.GET("/blockchain/height", AuthHandler.VerifyMiddleWare, ChainHandler.GetBlockchainHeight)
-	engine.GET("/blockchain/blocks", AuthHandler.VerifyMiddleWare, ChainHandler.GetBlocksByRange)
-	engine.GET("/blockchain/status", AuthHandler.VerifyMiddleWare, ChainHandler.GetNodeStatus)
+	engine.GET("/blockchain/nodes", ChainHandler.GetBlockchainNodes)
+	engine.GET("/blockchain/height", ChainHandler.GetBlockchainHeight)
+	engine.GET("/blockchain/blocks", ChainHandler.GetBlocksByRange)
+	engine.GET("/blockchain/status", ChainHandler.GetNodeStatus)
 
 	// 添加静态文件服务用于访问上传的头像文件
 	engine.Static("/public", "./public")
