@@ -16,7 +16,7 @@
           <div class="avatar-section">
             <img :src="userAvatar" alt="User Avatar" class="profile-avatar">
             <h3>{{ userName }}</h3>
-            <p class="user-role">农产品溯源系统用户</p>
+            <p class="user-role">{{ t('personalCenter.userRole') }}</p>
             <!-- <div class="avatar-actions">
               <button class="btn btn-sm" @click="changeAvatar">
                 <i class="fas fa-camera"></i>
@@ -123,7 +123,7 @@
               <div class="detail-label">{{ t('personalCenter.systemStatusLabel') }}:</div>
               <div class="detail-value">
                 <span class="status-badge" :class="systemStatus.statusClass">
-                  {{ systemStatus.statusText }}
+                  {{ statusText }}
                 </span>
               </div>
             </div>
@@ -234,9 +234,10 @@ const userEmail = computed(() => {
 })
 const userAvatar = computed(() => authStore.user?.avatarUrl)
 
-const userType = ref(t('personalCenter.standardUser'))
+const userType = computed(() => t('personalCenter.standardUser'))
 const lastActivity = computed(() => {
-  return new Date().toLocaleString('zh-CN', {
+  const locale = useI18n().locale.value === 'zh-CN' ? 'zh-CN' : 'en-US'
+  return new Date().toLocaleString(locale, {
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
@@ -247,7 +248,8 @@ const lastActivity = computed(() => {
 
 const formatLoginTime = computed(() => {
   if (authStore.user?.loginTime) {
-    return new Date(authStore.user.loginTime).toLocaleString('zh-CN', {
+    const locale = useI18n().locale.value === 'zh-CN' ? 'zh-CN' : 'en-US'
+    return new Date(authStore.user.loginTime).toLocaleString(locale, {
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',
@@ -270,9 +272,10 @@ const systemStatus = reactive({
   storageUsage: 65,
   cpuUsage: 42,
   memoryUsage: 78,
-  statusClass: 'online',
-  statusText: t('personalCenter.runningNormal')
+  statusClass: 'online'
 })
+
+const statusText = computed(() => t('personalCenter.runningNormal'))
 
 // 活动日志
 const activityLogs = ref([

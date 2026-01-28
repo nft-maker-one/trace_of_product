@@ -26,7 +26,8 @@ export default {
     systemBusy: 'System is busy, please try again later',
     justNow: 'Just now',
     minutesAgo: ' minutes ago',
-    hoursAgo: ' hours ago'
+    hoursAgo: ' hours ago',
+    all: 'All'
   },
 
   // Login Page
@@ -143,6 +144,7 @@ export default {
     userInfo: 'User Information',
     editProfile: 'Edit Profile',
     // changeAvatar: 'Change Avatar',
+    userRole: 'Agricultural Traceability System User',
     userId: 'User ID',
     loginTime: 'Login Time',
     accountType: 'Account Type',
@@ -369,6 +371,7 @@ export default {
     noResults: 'No query results',
     enterCorrectId: 'Please enter the correct agricultural product ID for query',
     viewHelp: 'View query help',
+    exportFileName: 'Product_Trace',
     queryHelp: 'Query Help:\n1. Enter agricultural product ID (e.g.: EG20260124001)\n2. Select query node\n3. Click "Query Product Information" button\n4. View the returned complete agricultural product traceability information',
     enterProductId: 'Please enter agricultural product ID',
     selectQueryNode: 'Please select query node',

@@ -26,7 +26,8 @@ export default {
     systemBusy: '系统繁忙，请稍后重试',
     justNow: '刚刚',
     minutesAgo: '分钟前',
-    hoursAgo: '小时前'
+    hoursAgo: '小时前',
+    all: '全部'
   },
 
   // 登录页面
@@ -143,6 +144,7 @@ export default {
     userInfo: '用户信息',
     editProfile: '编辑资料',
     // changeAvatar: '更换头像',
+    userRole: '农产品溯源系统用户',
     userId: '用户ID',
     loginTime: '登录时间',
     accountType: '账户类型',
@@ -369,6 +371,7 @@ export default {
     noResults: '暂无查询结果',
     enterCorrectId: '请输入正确的农产品ID进行查询',
     viewHelp: '查看查询帮助',
+    exportFileName: '农产品追溯',
     queryHelp: '查询帮助：\n1. 输入农产品ID（如：EG20260124001）\n2. 选择查询节点\n3. 点击"查询产品信息"按钮\n4. 查看返回的农产品全流程追溯信息',
     enterProductId: '请输入农产品ID',
     selectQueryNode: '请选择查询节点',

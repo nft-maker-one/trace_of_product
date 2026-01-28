@@ -555,7 +555,7 @@ function exportResult() {
 
   const link = document.createElement('a')
   link.href = url
-  link.download = `农产品追溯_${queryId.value}_${new Date().getTime()}.json`
+  link.download = `${t('dataQuery.exportFileName')}_${queryId.value}_${new Date().getTime()}.json`
   document.body.appendChild(link)
   link.click()
   document.body.removeChild(link)
